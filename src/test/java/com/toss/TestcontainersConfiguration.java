@@ -12,7 +12,7 @@ import org.testcontainers.utility.DockerImageName;
  * {@code @ServiceConnection} 으로 datasource 접속 정보가 자동 주입된다.
  */
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 
     @Bean
     @ServiceConnection
