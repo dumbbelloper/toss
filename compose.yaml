@@ -1,0 +1,24 @@
+# 로컬 개발 인프라. `spring-boot-docker-compose` 가 bootRun 시 자동 기동/중지하고
+# 데이터소스 접속 정보를 주입합니다. 수동 기동: `docker compose up -d`.
+#
+# 버전은 안정화된 stable 태그로 고정 (재현성). 업그레이드 시 의도적으로만 변경.
+services:
+  postgres:
+    image: postgres:17.4            # PostgreSQL 17.x stable (장기 지원 메이저)
+    container_name: toss-postgres
+    environment:
+      POSTGRES_DB: toss
+      POSTGRES_USER: toss
+      POSTGRES_PASSWORD: toss
+    ports:
+      - "5432:5432"
+    volumes:
+      - toss-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U toss -d toss"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  toss-pgdata:
