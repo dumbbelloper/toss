@@ -40,6 +40,8 @@
         button.active { background: var(--accent); border-color: var(--accent); }
         input { background: #0d1117; color: var(--text); border: 1px solid var(--border);
             border-radius: 6px; padding: 6px 9px; font-size: 13px; width: 100%; }
+        select { background: #0d1117; color: var(--text); border: 1px solid var(--border);
+            border-radius: 6px; padding: 6px 9px; font-size: 13px; }
         .row { display: flex; gap: 6px; align-items: center; }
         .x { color: var(--muted); cursor: pointer; padding: 0 4px; }
         .x:hover { color: var(--down); }
@@ -107,6 +109,24 @@
                 <span style="margin-left:auto;font-weight:400;color:var(--muted)">100 = 매수평균가(손익분기)</span></h2>
             <div id="cmp-chart" style="height: 300px;"></div>
             <div id="cmp-legend" style="display:flex;flex-wrap:wrap;gap:12px;padding:10px 14px;font-size:12px;"></div>
+        </div>
+        <div class="panel">
+            <h2>백테스트 <span style="margin-left:auto;font-weight:400;color:var(--muted)">토스 일봉 기반</span></h2>
+            <div class="body">
+                <form class="row" onsubmit="runBacktest(event)" style="flex-wrap:wrap">
+                    <input id="bt-symbol" placeholder="종목코드 (비우면 차트 종목)" style="width:180px"/>
+                    <select id="bt-strategy">
+                        <option value="BUY_AND_HOLD">매수 후 보유</option>
+                        <option value="SMA_CROSS">SMA 크로스 5/20</option>
+                        <option value="RSI">RSI 14 (30/70)</option>
+                    </select>
+                    <button type="submit">실행</button>
+                </form>
+                <div id="bt-result" style="margin-top:10px;font-size:13px;line-height:1.6;color:var(--muted)">
+                    종목과 전략을 선택해 실행하세요.
+                </div>
+            </div>
+            <div id="bt-chart" style="height: 200px;"></div>
         </div>
     </div>
 </div>
@@ -305,6 +325,37 @@ async function loadComparison() {
         cmpChart.timeScale().fitContent();
     } catch (e) {
         legend.innerHTML = '<span class="err">비교 차트 로드 실패 — toss.account-seq 필요</span>';
+    }
+}
+
+// ---- 백테스트 ----
+const btChart = LightweightCharts.createChart(document.getElementById('bt-chart'), {
+    layout: {background: {color: '#161b22'}, textColor: '#8b949e', attributionLogo: false},
+    grid: {vertLines: {color: '#21262d'}, horzLines: {color: '#21262d'}},
+    rightPriceScale: {borderColor: '#2a313c'}, timeScale: {borderColor: '#2a313c'}, autoSize: true,
+});
+const btSeries = btChart.addLineSeries({color: '#3b82f6', lineWidth: 2, priceLineVisible: false});
+async function runBacktest(e) {
+    e.preventDefault();
+    const sym = document.getElementById('bt-symbol').value.trim() || activeSymbol;
+    const res = document.getElementById('bt-result');
+    if (!sym) { res.innerHTML = '<span class="err">종목을 입력하거나 차트에서 선택하세요</span>'; return; }
+    const strat = document.getElementById('bt-strategy').value;
+    res.textContent = '실행 중…';
+    try {
+        const r = await fetch(`/api/backtest?symbol=${encodeURIComponent(sym)}&strategy=${strat}&count=200`);
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+        const tr = (d.totalReturn * 100).toFixed(1), bh = (d.buyHoldReturn * 100).toFixed(1);
+        const mdd = (d.maxDrawdown * 100).toFixed(1), wr = (d.winRate * 100).toFixed(0);
+        const c = d.totalReturn >= 0 ? 'up' : 'down';
+        res.innerHTML = `<b style="color:var(--text)">${d.symbol}</b> · ${d.params} <span style="color:var(--muted)">(${d.bars}봉)</span><br>` +
+            `전략 <span class="${c}">${sign(d.totalReturn)}${tr}%</span> · 보유 ${sign(d.buyHoldReturn)}${bh}% · ` +
+            `MDD <span class="down">-${mdd}%</span> · 거래 ${d.trades}회 · 승률 ${wr}%`;
+        btSeries.setData((d.equity || []).map(p => ({time: p.time, value: p.value})));
+        btChart.timeScale().fitContent();
+    } catch (err) {
+        res.innerHTML = '<span class="err">백테스트 실패 — 종목/데이터 확인</span>';
     }
 }
 
