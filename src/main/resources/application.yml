@@ -19,6 +19,9 @@ toss:
   base-url: https://openapi.tossinvest.com
   # client-id / client-secret / account-seq 는 application-local.yml 에 설정 (gitignored)
 
+telegram:
+  enabled: false   # true 로 설정 시 텔레그램 알림 사용. bot-token/chat-id 는 application-local.yml 에.
+
 management:
   endpoints:
     web:
