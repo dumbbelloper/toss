@@ -1,6 +1,8 @@
 package com.toss.service;
 
 import com.toss.client.MarketDataClient;
+import com.toss.client.dto.CandleInterval;
+import com.toss.client.dto.CandlePageResponse;
 import com.toss.client.dto.OrderbookResponse;
 import com.toss.client.dto.PriceResponse;
 import com.toss.common.TossApiException;
@@ -42,6 +44,11 @@ public class MarketDataService {
     /** 호가 조회 (단일 종목). */
     public OrderbookResponse orderbook(String symbol) {
         return execute(() -> client.getOrderbook(symbol).result());
+    }
+
+    /** 캔들 조회 (수정주가 기준). count 최근 봉. */
+    public CandlePageResponse candles(String symbol, CandleInterval interval, Integer count) {
+        return execute(() -> client.getCandles(symbol, interval.code(), count, null, true).result());
     }
 
     private static <T> T execute(Supplier<T> call) {

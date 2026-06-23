@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>toss · 트레이딩 대시보드</title>
+    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        :root {
+            --bg: #0e1116; --panel: #161b22; --border: #2a313c; --text: #e6edf3;
+            --muted: #8b949e; --up: #2ea043; --down: #f85149; --accent: #3b82f6;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text);
+            font-family: -apple-system, "Segoe UI", "Apple SD Gothic Neo", sans-serif; font-size: 14px; }
+        header { padding: 14px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px; }
+        header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+        header .status { margin-left: auto; color: var(--muted); font-size: 12px; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 5px; }
+        .dot.live { background: var(--up); }
+        .grid { display: grid; grid-template-columns: 300px 1fr; gap: 14px; padding: 14px; }
+        .col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .panel h2 { font-size: 13px; margin: 0; padding: 11px 14px; border-bottom: 1px solid var(--border);
+            color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .panel .body { padding: 12px 14px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: right; padding: 7px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        th { color: var(--muted); font-weight: 500; font-size: 12px; }
+        th:first-child, td:first-child { text-align: left; }
+        tr:last-child td { border-bottom: none; }
+        .up { color: var(--up); } .down { color: var(--down); }
+        .num { font-variant-numeric: tabular-nums; }
+        .wl-row { cursor: pointer; } .wl-row:hover td { background: #1c2330; }
+        .wl-row.active td { background: #1f2937; }
+        button { background: #21262d; color: var(--text); border: 1px solid var(--border);
+            border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 12px; }
+        button:hover { border-color: var(--accent); }
+        button.active { background: var(--accent); border-color: var(--accent); }
+        input { background: #0d1117; color: var(--text); border: 1px solid var(--border);
+            border-radius: 6px; padding: 6px 9px; font-size: 13px; width: 100%; }
+        .row { display: flex; gap: 6px; align-items: center; }
+        .x { color: var(--muted); cursor: pointer; padding: 0 4px; }
+        .x:hover { color: var(--down); }
+        #chart { height: 380px; width: 100%; }
+        .chart-head { display: flex; gap: 6px; align-items: center; padding: 10px 14px; }
+        .chart-head .sym { font-size: 15px; font-weight: 600; margin-right: auto; }
+        .empty { color: var(--muted); padding: 18px 14px; text-align: center; font-size: 13px; }
+        .todo { font-size: 11px; color: var(--muted); border: 1px dashed var(--border);
+            border-radius: 6px; padding: 6px 10px; margin: 0 14px 12px; }
+        .err { color: var(--down); font-size: 12px; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>📈 toss 트레이딩 대시보드</h1>
+    <span style="color:var(--muted);font-size:12px">조회 전용</span>
+    <span class="status"><span id="livedot" class="dot"></span><span id="livetext">실시간 연결 대기</span></span>
+</header>
+
+<div class="grid">
+    <!-- 좌측: 관심종목 -->
+    <div class="col">
+        <div class="panel">
+            <h2>관심종목 <span style="margin-left:auto;font-weight:400" id="wl-count"></span></h2>
+            <div class="body">
+                <form class="row" onsubmit="addSymbol(event)">
+                    <input id="wl-input" placeholder="종목코드 (예: 005930)" autocomplete="off"/>
+                    <button type="submit">추가</button>
+                </form>
+            </div>
+            <table>
+                <thead><tr><th>종목</th><th>현재가</th><th></th></tr></thead>
+                <tbody id="wl-body"><tr><td colspan="3" class="empty">관심종목을 추가하세요</td></tr></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h2>대기중 주문</h2>
+            <table>
+                <thead><tr><th>종목</th><th>구분</th><th>수량</th><th>가격</th></tr></thead>
+                <tbody id="ord-body"><tr><td colspan="4" class="empty">불러오는 중…</td></tr></tbody>
+            </table>
+            <div class="todo">🚧 TODO: 매수/매도 주문 실행 (현재 조회 전용)</div>
+        </div>
+    </div>
+
+    <!-- 우측: 차트 + 포트폴리오 -->
+    <div class="col">
+        <div class="panel">
+            <div class="chart-head">
+                <span class="sym" id="chart-sym">종목을 선택하세요</span>
+                <button data-iv="DAY" class="iv active" onclick="setInterval2('DAY')">일봉</button>
+                <button data-iv="MINUTE" class="iv" onclick="setInterval2('MINUTE')">분봉</button>
+            </div>
+            <div id="chart"></div>
+        </div>
+        <div class="panel">
+            <h2>포트폴리오 <span style="margin-left:auto;font-weight:400" id="pf-sum"></span></h2>
+            <table>
+                <thead><tr><th>종목</th><th>수량</th><th>평균가</th><th>현재가</th><th>평가손익</th><th>수익률</th></tr></thead>
+                <tbody id="pf-body"><tr><td colspan="6" class="empty">불러오는 중…</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script th:inline="none">
+//<![CDATA[
+const fmt = (n, d = 0) => n == null ? '-' : Number(n).toLocaleString('ko-KR', {maximumFractionDigits: d});
+const pct = (r) => r == null ? '-' : (Number(r) * 100).toFixed(2) + '%';
+const cls = (n) => Number(n) > 0 ? 'up' : Number(n) < 0 ? 'down' : '';
+const sign = (n) => Number(n) > 0 ? '+' : '';
+
+let activeSymbol = null, interval = 'DAY';
+const watch = new Map(); // symbol -> last price
+
+// ---- 차트 ----
+const chartEl = document.getElementById('chart');
+const chart = LightweightCharts.createChart(chartEl, {
+    layout: {background: {color: '#161b22'}, textColor: '#8b949e'},
+    grid: {vertLines: {color: '#21262d'}, horzLines: {color: '#21262d'}},
+    rightPriceScale: {borderColor: '#2a313c'}, timeScale: {borderColor: '#2a313c'},
+    autoSize: true,
+});
+const candleSeries = chart.addCandlestickSeries({
+    upColor: '#2ea043', downColor: '#f85149', borderVisible: false,
+    wickUpColor: '#2ea043', wickDownColor: '#f85149',
+});
+
+async function loadChart(symbol) {
+    activeSymbol = symbol;
+    document.getElementById('chart-sym').textContent = symbol + (interval === 'DAY' ? ' · 일봉' : ' · 분봉');
+    document.querySelectorAll('.wl-row').forEach(r => r.classList.toggle('active', r.dataset.sym === symbol));
+    try {
+        const r = await fetch(`/api/dashboard/candles?symbol=${encodeURIComponent(symbol)}&interval=${interval}&count=150`);
+        if (!r.ok) throw new Error(await r.text());
+        const data = await r.json();
+        const rows = (data.candles || []).map(c => ({
+            time: toTime(c.timestamp, interval),
+            open: +c.openPrice, high: +c.highPrice, low: +c.lowPrice, close: +c.closePrice,
+        })).filter(c => c.time).sort((a, b) => (a.time > b.time ? 1 : -1));
+        candleSeries.setData(rows);
+        chart.timeScale().fitContent();
+    } catch (e) {
+        document.getElementById('chart-sym').innerHTML = symbol + ' <span class="err">차트 로드 실패</span>';
+    }
+}
+function toTime(iso, iv) {
+    if (!iso) return null;
+    if (iv === 'DAY') return iso.slice(0, 10);          // 'YYYY-MM-DD'
+    return Math.floor(new Date(iso).getTime() / 1000);  // intraday: unix seconds
+}
+function setInterval2(iv) {
+    interval = iv;
+    document.querySelectorAll('.iv').forEach(b => b.classList.toggle('active', b.dataset.iv === iv));
+    if (activeSymbol) loadChart(activeSymbol);
+}
+
+// ---- 관심종목 ----
+async function loadWatchlist() {
+    const r = await fetch('/api/monitor/watchlist');
+    const symbols = await r.json();
+    watch.clear();
+    symbols.forEach(s => watch.set(s, watch.get(s) ?? null));
+    renderWatch();
+    if (!activeSymbol && symbols.length) loadChart(symbols[0]);
+}
+function renderWatch() {
+    const body = document.getElementById('wl-body');
+    document.getElementById('wl-count').textContent = watch.size ? watch.size + '종목' : '';
+    if (!watch.size) { body.innerHTML = '<tr><td colspan="3" class="empty">관심종목을 추가하세요</td></tr>'; return; }
+    body.innerHTML = [...watch.entries()].map(([s, p]) => `
+        <tr class="wl-row ${s === activeSymbol ? 'active' : ''}" data-sym="${s}" onclick="loadChart('${s}')">
+            <td>${s}</td><td class="num" id="wl-p-${s}">${p == null ? '-' : fmt(p)}</td>
+            <td><span class="x" onclick="event.stopPropagation();removeSymbol('${s}')">✕</span></td>
+        </tr>`).join('');
+}
+async function addSymbol(e) {
+    e.preventDefault();
+    const inp = document.getElementById('wl-input');
+    const s = inp.value.trim();
+    if (!s) return;
+    await fetch('/api/monitor/watchlist/' + encodeURIComponent(s), {method: 'PUT'});
+    inp.value = '';
+    loadWatchlist();
+}
+async function removeSymbol(s) {
+    await fetch('/api/monitor/watchlist/' + encodeURIComponent(s), {method: 'DELETE'});
+    watch.delete(s);
+    loadWatchlist();
+}
+
+// ---- 포트폴리오 ----
+async function loadPortfolio() {
+    const body = document.getElementById('pf-body');
+    try {
+        const r = await fetch('/api/dashboard/portfolio');
+        if (!r.ok) throw new Error('account-seq 필요');
+        const d = await r.json();
+        const items = d.items || [];
+        if (!items.length) { body.innerHTML = '<tr><td colspan="6" class="empty">보유 종목 없음</td></tr>'; return; }
+        body.innerHTML = items.map(i => `
+            <tr><td>${i.name || i.symbol}</td>
+                <td class="num">${fmt(i.quantity)}</td>
+                <td class="num">${fmt(i.averagePurchasePrice)}</td>
+                <td class="num">${fmt(i.lastPrice)}</td>
+                <td class="num ${cls(i.profitLoss?.amount)}">${sign(i.profitLoss?.amount)}${fmt(i.profitLoss?.amount)}</td>
+                <td class="num ${cls(i.profitLoss?.rate)}">${sign(i.profitLoss?.rate)}${pct(i.profitLoss?.rate)}</td></tr>`).join('');
+        const pl = d.profitLoss?.amount?.krw;
+        document.getElementById('pf-sum').innerHTML =
+            pl != null ? `평가손익 <span class="${cls(pl)}">${sign(pl)}${fmt(pl)}원</span>` : '';
+    } catch (e) {
+        body.innerHTML = `<tr><td colspan="6" class="empty err">불러올 수 없음 — toss.account-seq 설정 필요</td></tr>`;
+    }
+}
+
+// ---- 대기중 주문 ----
+async function loadOrders() {
+    const body = document.getElementById('ord-body');
+    try {
+        const r = await fetch('/api/dashboard/orders');
+        if (!r.ok) throw new Error();
+        const orders = await r.json();
+        if (!orders.length) { body.innerHTML = '<tr><td colspan="4" class="empty">대기중 주문 없음</td></tr>'; return; }
+        body.innerHTML = orders.map(o => `
+            <tr><td>${o.symbol}</td>
+                <td class="${o.side === 'BUY' ? 'up' : 'down'}">${o.side === 'BUY' ? '매수' : '매도'}</td>
+                <td class="num">${fmt(o.quantity)}</td>
+                <td class="num">${o.price ? fmt(o.price) : '시장가'}</td></tr>`).join('');
+    } catch (e) {
+        body.innerHTML = `<tr><td colspan="4" class="empty err">불러올 수 없음 — account-seq 필요</td></tr>`;
+    }
+}
+
+// ---- SSE 실시간 시세 ----
+function connectSSE() {
+    const es = new EventSource('/api/monitor/stream');
+    es.addEventListener('open', () => {
+        document.getElementById('livedot').classList.add('live');
+        document.getElementById('livetext').textContent = '실시간 연결됨';
+    });
+    es.addEventListener('price', (ev) => {
+        const t = JSON.parse(ev.data);
+        watch.set(t.symbol, t.lastPrice);
+        const cell = document.getElementById('wl-p-' + t.symbol);
+        if (cell) cell.textContent = fmt(t.lastPrice);
+    });
+    es.addEventListener('error', () => {
+        document.getElementById('livedot').classList.remove('live');
+        document.getElementById('livetext').textContent = '재연결 중…';
+    });
+}
+
+loadWatchlist();
+loadPortfolio();
+loadOrders();
+connectSSE();
+setInterval(loadOrders, 15000);
+setInterval(loadPortfolio, 30000);
+//]]>
+</script>
+</body>
+</html>

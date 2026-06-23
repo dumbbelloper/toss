@@ -21,6 +21,7 @@ repositories {
 dependencies {
     // --- web (RestClient, @HttpExchange 클라이언트, SSE, 대시보드) ---
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.projectreactor:reactor-core") // SSE 시세 팬아웃용 Sinks/Flux
