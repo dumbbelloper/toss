@@ -1,5 +1,6 @@
 package com.toss.client;
 
+import com.toss.client.dto.CandlePageResponse;
 import com.toss.client.dto.OrderbookResponse;
 import com.toss.client.dto.PriceResponse;
 import com.toss.client.dto.TossEnvelope;
@@ -23,4 +24,12 @@ public interface MarketDataClient {
     /** 호가 조회. */
     @GetExchange("/orderbook")
     TossEnvelope<OrderbookResponse> getOrderbook(@RequestParam("symbol") String symbol);
+
+    /** 캔들 차트 조회 (1분봉/일봉). */
+    @GetExchange("/candles")
+    TossEnvelope<CandlePageResponse> getCandles(@RequestParam("symbol") String symbol,
+                                                @RequestParam("interval") String interval,
+                                                @RequestParam(name = "count", required = false) Integer count,
+                                                @RequestParam(name = "before", required = false) String before,
+                                                @RequestParam(name = "adjusted", required = false) Boolean adjusted);
 }
