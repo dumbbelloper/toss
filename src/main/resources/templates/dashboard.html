@@ -102,6 +102,12 @@
                 <tbody id="pf-body"><tr><td colspan="6" class="empty">불러오는 중…</td></tr></tbody>
             </table>
         </div>
+        <div class="panel">
+            <h2>보유종목 매수가 대비 성과
+                <span style="margin-left:auto;font-weight:400;color:var(--muted)">100 = 매수평균가(손익분기)</span></h2>
+            <div id="cmp-chart" style="height: 300px;"></div>
+            <div id="cmp-legend" style="display:flex;flex-wrap:wrap;gap:12px;padding:10px 14px;font-size:12px;"></div>
+        </div>
     </div>
 </div>
 
@@ -252,9 +258,50 @@ function connectSSE() {
     });
 }
 
+// ---- 매수가 대비 성과 비교 ----
+const cmpChart = LightweightCharts.createChart(document.getElementById('cmp-chart'), {
+    layout: {background: {color: '#161b22'}, textColor: '#8b949e'},
+    grid: {vertLines: {color: '#21262d'}, horzLines: {color: '#21262d'}},
+    rightPriceScale: {borderColor: '#2a313c'}, timeScale: {borderColor: '#2a313c'},
+    autoSize: true,
+});
+const palette = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#a855f7', '#06b6d4', '#eab308', '#ec4899'];
+async function loadComparison() {
+    const legend = document.getElementById('cmp-legend');
+    try {
+        const r = await fetch('/api/dashboard/comparison?count=120');
+        if (!r.ok) throw new Error();
+        const series = await r.json();
+        if (!series.length) {
+            legend.innerHTML = '<span style="color:var(--muted)">보유 종목 없음 (toss.account-seq 설정 시 표시)</span>';
+            return;
+        }
+        legend.innerHTML = '';
+        let baseAdded = false;
+        series.forEach((s, i) => {
+            const color = palette[i % palette.length];
+            const ls = cmpChart.addLineSeries({color, lineWidth: 2, priceLineVisible: false, lastValueVisible: false});
+            ls.setData((s.points || []).map(p => ({time: p.time, value: p.value})));
+            if (!baseAdded) {
+                ls.createPriceLine({price: 100, color: '#8b949e', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '매수가'});
+                baseAdded = true;
+            }
+            const last = s.points?.length ? s.points[s.points.length - 1].value : null;
+            const delta = last != null ? sign(last - 100) + (last - 100).toFixed(1) + '%' : '';
+            const c = last > 100 ? 'up' : last < 100 ? 'down' : '';
+            legend.innerHTML += `<span><span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:2px;margin-right:5px"></span>` +
+                `${s.name || s.symbol} <span class="${c}">${delta}</span>${s.purchaseDate ? ` · 매수 ${s.purchaseDate}` : ''}</span>`;
+        });
+        cmpChart.timeScale().fitContent();
+    } catch (e) {
+        legend.innerHTML = '<span class="err">비교 차트 로드 실패 — toss.account-seq 필요</span>';
+    }
+}
+
 loadWatchlist();
 loadPortfolio();
 loadOrders();
+loadComparison();
 connectSSE();
 setInterval(loadOrders, 15000);
 setInterval(loadPortfolio, 30000);

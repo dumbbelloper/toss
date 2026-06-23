@@ -26,12 +26,14 @@ public class DashboardApiController {
     private final AccountService accounts;
     private final OrderQueryService orders;
     private final MarketDataService marketData;
+    private final DashboardService dashboard;
 
     public DashboardApiController(AccountService accounts, OrderQueryService orders,
-                                  MarketDataService marketData) {
+                                  MarketDataService marketData, DashboardService dashboard) {
         this.accounts = accounts;
         this.orders = orders;
         this.marketData = marketData;
+        this.dashboard = dashboard;
     }
 
     /** 보유 주식 + 손익 요약. */
@@ -52,5 +54,11 @@ public class DashboardApiController {
                                       @RequestParam(defaultValue = "DAY") CandleInterval interval,
                                       @RequestParam(defaultValue = "120") int count) {
         return marketData.candles(symbol, interval, count);
+    }
+
+    /** 보유 종목 매수가 대비 성과 비교 시계열. */
+    @GetMapping("/comparison")
+    public List<ComparisonSeries> comparison(@RequestParam(defaultValue = "120") int count) {
+        return dashboard.comparison(count);
     }
 }

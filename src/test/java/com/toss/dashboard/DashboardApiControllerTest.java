@@ -21,7 +21,9 @@ class DashboardApiControllerTest {
     private final AccountService accounts = mock(AccountService.class);
     private final OrderQueryService orders = mock(OrderQueryService.class);
     private final MarketDataService marketData = mock(MarketDataService.class);
-    private final DashboardApiController controller = new DashboardApiController(accounts, orders, marketData);
+    private final DashboardService dashboard = mock(DashboardService.class);
+    private final DashboardApiController controller =
+            new DashboardApiController(accounts, orders, marketData, dashboard);
 
     @Test
     void candlesDelegatesWithDefaults() {
