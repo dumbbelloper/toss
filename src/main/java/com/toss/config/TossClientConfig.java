@@ -5,6 +5,7 @@ import com.toss.auth.BearerTokenInterceptor;
 import com.toss.auth.TossTokenManager;
 import com.toss.client.AccountClient;
 import com.toss.client.MarketDataClient;
+import com.toss.client.MarketInfoClient;
 import com.toss.client.OrderClient;
 import com.toss.client.OrderInfoClient;
 import com.toss.ratelimit.RateLimitInterceptor;
@@ -51,6 +52,11 @@ public class TossClientConfig {
     @Bean
     MarketDataClient marketDataClient(RestClient tossApiRestClient) {
         return createClient(tossApiRestClient, MarketDataClient.class);
+    }
+
+    @Bean
+    MarketInfoClient marketInfoClient(RestClient tossApiRestClient) {
+        return createClient(tossApiRestClient, MarketInfoClient.class);
     }
 
     @Bean
