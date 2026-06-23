@@ -27,19 +27,36 @@ public class TossApiException extends RuntimeException {
         this.data = data;
     }
 
-    /** RestClient 가 던진 4xx/5xx 예외를 토스 에러 envelope 로 해석해 변환한다. */
+    /**
+     * RestClient 가 던진 4xx/5xx 예외를 토스 에러 envelope 로 해석해 변환한다.
+     * 429/5xx 는 재시도 가능한 {@link TossTransientException} 으로 분류한다.
+     */
     public static TossApiException from(RestClientResponseException e) {
+        HttpStatusCode status = e.getStatusCode();
+        String code = "unknown";
+        String message = e.getStatusText();
+        String requestId = null;
+        Map<String, Object> data = null;
         try {
             ErrorResponse body = e.getResponseBodyAs(ErrorResponse.class);
             if (body != null && body.error() != null) {
                 ApiError err = body.error();
-                return new TossApiException(e.getStatusCode(), err.code(), err.message(),
-                        err.requestId(), err.data());
+                code = err.code();
+                message = err.message();
+                requestId = err.requestId();
+                data = err.data();
             }
         } catch (Exception ignored) {
             // envelope 파싱 불가 → 상태 코드 기반 폴백
         }
-        return new TossApiException(e.getStatusCode(), "unknown", e.getStatusText(), null, null);
+        return isTransient(status)
+                ? new TossTransientException(status, code, message, requestId, data)
+                : new TossApiException(status, code, message, requestId, data);
+    }
+
+    /** 429(rate limit) 또는 5xx(서버 일시 장애)는 재시도 대상. */
+    private static boolean isTransient(HttpStatusCode status) {
+        return status.value() == 429 || status.is5xxServerError();
     }
 
     public HttpStatusCode status() {

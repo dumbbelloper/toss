@@ -5,6 +5,7 @@ import com.toss.client.dto.Currency;
 import com.toss.client.dto.OrderbookResponse;
 import com.toss.client.dto.PriceResponse;
 import com.toss.common.TossApiException;
+import com.toss.common.TossTransientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -86,11 +87,26 @@ class MarketDataServiceTest {
                                 "message":"종목을 찾을 수 없습니다"}}"""));
 
         assertThatThrownBy(() -> service.orderbook("ZZZ"))
+                .isInstanceOf(TossApiException.class)
+                .isNotInstanceOf(TossTransientException.class) // 4xx 는 재시도 대상 아님
                 .asInstanceOf(throwable(TossApiException.class))
                 .satisfies(e -> {
                     assertThat(e.code()).isEqualTo("stock-not-found");
                     assertThat(e.requestId()).isEqualTo("req-1");
                     assertThat(e.status()).isEqualTo(HttpStatus.NOT_FOUND);
                 });
+    }
+
+    @Test
+    void classifiesRateLimitAsTransient() {
+        server.expect(requestTo("http://toss.test/api/v1/prices?symbols=005930"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                        .contentType(APPLICATION_JSON)
+                        .body("""
+                                {"error":{"requestId":"req-9","code":"rate-limit-exceeded",
+                                "message":"too many"}}"""));
+
+        assertThatThrownBy(() -> service.prices("005930"))
+                .isInstanceOf(TossTransientException.class);
     }
 }
