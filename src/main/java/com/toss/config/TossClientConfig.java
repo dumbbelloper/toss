@@ -1,7 +1,9 @@
 package com.toss.config;
 
+import com.toss.auth.AccountHeaderInterceptor;
 import com.toss.auth.BearerTokenInterceptor;
 import com.toss.auth.TossTokenManager;
+import com.toss.client.AccountClient;
 import com.toss.client.MarketDataClient;
 import com.toss.ratelimit.RateLimitInterceptor;
 import com.toss.ratelimit.TossRateLimiter;
@@ -31,7 +33,7 @@ public class TossClientConfig {
 
     /**
      * 인증된 API 호출용 클라이언트.
-     * 인터셉터 순서: 레이트리밋(토큰 확보) → Bearer 주입 → 실행.
+     * 인터셉터 순서: 레이트리밋(토큰 확보) → 계좌 헤더 주입 → Bearer 주입 → 실행.
      */
     @Bean
     RestClient tossApiRestClient(TossProperties props, TossTokenManager tokenManager,
@@ -39,6 +41,7 @@ public class TossClientConfig {
         return RestClient.builder()
                 .baseUrl(props.baseUrl())
                 .requestInterceptor(new RateLimitInterceptor(rateLimiter))
+                .requestInterceptor(new AccountHeaderInterceptor(props))
                 .requestInterceptor(new BearerTokenInterceptor(tokenManager))
                 .build();
     }
@@ -46,6 +49,11 @@ public class TossClientConfig {
     @Bean
     MarketDataClient marketDataClient(RestClient tossApiRestClient) {
         return createClient(tossApiRestClient, MarketDataClient.class);
+    }
+
+    @Bean
+    AccountClient accountClient(RestClient tossApiRestClient) {
+        return createClient(tossApiRestClient, AccountClient.class);
     }
 
     private static <T> T createClient(RestClient restClient, Class<T> type) {
