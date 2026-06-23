@@ -1,0 +1,16 @@
+# 테스트 전용 설정 (test classpath 가 우선) — 라이브 API 호출/폴러/알림을 끄고
+# application-local.yml(시크릿·monitor.enabled) 을 로드하지 않아 테스트를 격리한다.
+# 데이터소스는 Testcontainers(@ServiceConnection)가 제공한다.
+spring:
+  application:
+    name: toss-test
+  flyway:
+    enabled: true
+
+toss:
+  base-url: https://openapi.tossinvest.com
+  monitor:
+    enabled: false
+
+telegram:
+  enabled: false
