@@ -5,6 +5,7 @@ import com.toss.auth.BearerTokenInterceptor;
 import com.toss.auth.TossTokenManager;
 import com.toss.client.AccountClient;
 import com.toss.client.MarketDataClient;
+import com.toss.client.OrderInfoClient;
 import com.toss.ratelimit.RateLimitInterceptor;
 import com.toss.ratelimit.TossRateLimiter;
 import org.springframework.context.annotation.Bean;
@@ -54,6 +55,11 @@ public class TossClientConfig {
     @Bean
     AccountClient accountClient(RestClient tossApiRestClient) {
         return createClient(tossApiRestClient, AccountClient.class);
+    }
+
+    @Bean
+    OrderInfoClient orderInfoClient(RestClient tossApiRestClient) {
+        return createClient(tossApiRestClient, OrderInfoClient.class);
     }
 
     private static <T> T createClient(RestClient restClient, Class<T> type) {
