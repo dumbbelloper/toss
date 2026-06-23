@@ -117,6 +117,13 @@ const fmt = (n, d = 0) => n == null ? '-' : Number(n).toLocaleString('ko-KR', {m
 const pct = (r) => r == null ? '-' : (Number(r) * 100).toFixed(2) + '%';
 const cls = (n) => Number(n) > 0 ? 'up' : Number(n) < 0 ? 'down' : '';
 const sign = (n) => Number(n) > 0 ? '+' : '';
+// 통화별 표기 (KR=원화, US=달러). 환율 환산 없음.
+const money = (n, cur) => n == null ? '-' : (cur === 'USD' ? '$' + fmt(n, 2) : '₩' + fmt(n, 0));
+const smoney = (n, cur) => {
+    if (n == null) return '-';
+    const s = Number(n) > 0 ? '+' : Number(n) < 0 ? '-' : '';
+    return s + (cur === 'USD' ? '$' + fmt(Math.abs(n), 2) : '₩' + fmt(Math.abs(n), 0));
+};
 
 let activeSymbol = null, interval = 'DAY';
 const watch = new Map(); // symbol -> last price
@@ -124,7 +131,7 @@ const watch = new Map(); // symbol -> last price
 // ---- 차트 ----
 const chartEl = document.getElementById('chart');
 const chart = LightweightCharts.createChart(chartEl, {
-    layout: {background: {color: '#161b22'}, textColor: '#8b949e'},
+    layout: {background: {color: '#161b22'}, textColor: '#8b949e', attributionLogo: false},
     grid: {vertLines: {color: '#21262d'}, horzLines: {color: '#21262d'}},
     rightPriceScale: {borderColor: '#2a313c'}, timeScale: {borderColor: '#2a313c'},
     autoSize: true,
@@ -207,15 +214,18 @@ async function loadPortfolio() {
         const items = d.items || [];
         if (!items.length) { body.innerHTML = '<tr><td colspan="6" class="empty">보유 종목 없음</td></tr>'; return; }
         body.innerHTML = items.map(i => `
-            <tr><td>${i.name || i.symbol}</td>
+            <tr><td>${i.name || i.symbol} <span style="color:var(--muted);font-size:11px">${i.currency === 'USD' ? '$' : '₩'}</span></td>
                 <td class="num">${fmt(i.quantity)}</td>
-                <td class="num">${fmt(i.averagePurchasePrice)}</td>
-                <td class="num">${fmt(i.lastPrice)}</td>
-                <td class="num ${cls(i.profitLoss?.amount)}">${sign(i.profitLoss?.amount)}${fmt(i.profitLoss?.amount)}</td>
+                <td class="num">${money(i.averagePurchasePrice, i.currency)}</td>
+                <td class="num">${money(i.lastPrice, i.currency)}</td>
+                <td class="num ${cls(i.profitLoss?.amount)}">${smoney(i.profitLoss?.amount, i.currency)}</td>
                 <td class="num ${cls(i.profitLoss?.rate)}">${sign(i.profitLoss?.rate)}${pct(i.profitLoss?.rate)}</td></tr>`).join('');
-        const pl = d.profitLoss?.amount?.krw;
-        document.getElementById('pf-sum').innerHTML =
-            pl != null ? `평가손익 <span class="${cls(pl)}">${sign(pl)}${fmt(pl)}원</span>` : '';
+        // 통화별 평가손익 (환율 환산 없이 KRW·USD 분리 표기)
+        const o = d.profitLoss?.amount || {};
+        const parts = [];
+        if (o.krw != null && Number(o.krw) !== 0) parts.push(`<span class="${cls(o.krw)}">${smoney(Number(o.krw), 'KRW')}</span>`);
+        if (o.usd != null && Number(o.usd) !== 0) parts.push(`<span class="${cls(o.usd)}">${smoney(Number(o.usd), 'USD')}</span>`);
+        document.getElementById('pf-sum').innerHTML = parts.length ? '평가손익 ' + parts.join('  ·  ') : '';
     } catch (e) {
         body.innerHTML = `<tr><td colspan="6" class="empty err">불러올 수 없음 — toss.account-seq 설정 필요</td></tr>`;
     }
@@ -260,7 +270,7 @@ function connectSSE() {
 
 // ---- 매수가 대비 성과 비교 ----
 const cmpChart = LightweightCharts.createChart(document.getElementById('cmp-chart'), {
-    layout: {background: {color: '#161b22'}, textColor: '#8b949e'},
+    layout: {background: {color: '#161b22'}, textColor: '#8b949e', attributionLogo: false},
     grid: {vertLines: {color: '#21262d'}, horzLines: {color: '#21262d'}},
     rightPriceScale: {borderColor: '#2a313c'}, timeScale: {borderColor: '#2a313c'},
     autoSize: true,
