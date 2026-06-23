@@ -20,8 +20,7 @@ toss:
   # client-id / client-secret / account-seq 는 application-local.yml 에 설정 (gitignored)
   digest:
     enabled: false          # true 시 cron 에 맞춰 텔레그램 시장 요약 발송
-    cron: "0 0 8 * * *"     # 매일 08:00 KST (Asia/Seoul)
-    # symbols: [ ... ]      # 요약에 포함할 종목 (지수 프록시·환율은 항상 포함)
+    cron: "0 0 * * * *"     # 매시 정각 KST (Asia/Seoul). 관심종목 전체 + 지수 프록시 + 환율
 
 telegram:
   enabled: false   # true 로 설정 시 텔레그램 알림 사용. bot-token/chat-id 는 application-local.yml 에.

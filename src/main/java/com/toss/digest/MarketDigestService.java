@@ -4,6 +4,7 @@ import com.toss.client.dto.Candle;
 import com.toss.client.dto.CandleInterval;
 import com.toss.client.dto.Currency;
 import com.toss.client.dto.ExchangeRateResponse;
+import com.toss.monitor.WatchlistService;
 import com.toss.notify.NotificationPort;
 import com.toss.service.MarketDataService;
 import com.toss.service.MarketInfoService;
@@ -41,14 +42,14 @@ public class MarketDigestService {
     private final MarketDataService marketData;
     private final MarketInfoService marketInfo;
     private final NotificationPort notifications;
-    private final DigestProperties props;
+    private final WatchlistService watchlist;
 
     public MarketDigestService(MarketDataService marketData, MarketInfoService marketInfo,
-                               NotificationPort notifications, DigestProperties props) {
+                               NotificationPort notifications, WatchlistService watchlist) {
         this.marketData = marketData;
         this.marketInfo = marketInfo;
         this.notifications = notifications;
-        this.props = props;
+        this.watchlist = watchlist;
     }
 
     /** 요약을 만들어 발송하고, 발송한 메시지를 반환한다. */
@@ -78,9 +79,10 @@ public class MarketDigestService {
             sb.append(line(proxy[0], quote(proxy[1])));
         }
 
-        if (!props.symbols().isEmpty()) {
-            sb.append("\n⭐ 종목\n");
-            for (String symbol : props.symbols()) {
+        List<String> symbols = watchlist.symbols().stream().sorted().toList();
+        if (!symbols.isEmpty()) {
+            sb.append("\n⭐ 관심종목 (").append(symbols.size()).append(")\n");
+            for (String symbol : symbols) {
                 sb.append(line(symbol, quote(symbol)));
             }
         }
