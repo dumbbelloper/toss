@@ -1,6 +1,16 @@
 HELP.md
 .gradle
+.claude
 build/
+
+### Secrets / local config (NEVER commit) ###
+application-local.yml
+application-local.yaml
+application-*-local.yml
+*-local.yml
+.env
+.env.*
+secrets/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
