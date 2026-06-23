@@ -4,6 +4,7 @@ import com.toss.client.dto.Candle;
 import com.toss.client.dto.CandlePageResponse;
 import com.toss.client.dto.Currency;
 import com.toss.client.dto.ExchangeRateResponse;
+import com.toss.monitor.WatchlistService;
 import com.toss.notify.NotificationPort;
 import com.toss.service.MarketDataService;
 import com.toss.service.MarketInfoService;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -24,9 +26,9 @@ class MarketDigestServiceTest {
     private final MarketDataService marketData = mock(MarketDataService.class);
     private final MarketInfoService marketInfo = mock(MarketInfoService.class);
     private final NotificationPort notifications = mock(NotificationPort.class);
-    private final DigestProperties props = new DigestProperties(true, "0 0 8 * * *", List.of("005930"));
+    private final WatchlistService watchlist = mock(WatchlistService.class);
     private final MarketDigestService service =
-            new MarketDigestService(marketData, marketInfo, notifications, props);
+            new MarketDigestService(marketData, marketInfo, notifications, watchlist);
 
     private static CandlePageResponse twoCandles(String prevClose, String lastClose) {
         return new CandlePageResponse(List.of(
@@ -38,10 +40,11 @@ class MarketDigestServiceTest {
     }
 
     @Test
-    void buildsDigestWithExchangeRateIndicesAndSymbols() {
+    void buildsDigestWithExchangeRateIndicesAndWatchlist() {
         when(marketInfo.exchangeRate(any(), any())).thenReturn(new ExchangeRateResponse(
                 Currency.USD, Currency.KRW, new BigDecimal("1536.67"), new BigDecimal("1536.17"), "DOWN"));
         when(marketData.candles(any(), any(), any())).thenReturn(twoCandles("100", "110")); // +10%
+        when(watchlist.symbols()).thenReturn(Set.of("005930", "AAPL")); // 관심종목 전체
 
         String msg = service.buildMessage();
 
@@ -49,7 +52,7 @@ class MarketDigestServiceTest {
                 .contains("시장 요약")
                 .contains("USD/KRW").contains("1,536.67").contains("▼")
                 .contains("코스피").contains("코스닥").contains("나스닥").contains("S&P500")
-                .contains("005930")
+                .contains("관심종목 (2)").contains("005930").contains("AAPL")
                 .contains("▲").contains("+10.00%");
     }
 

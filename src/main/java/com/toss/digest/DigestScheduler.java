@@ -21,7 +21,7 @@ public class DigestScheduler {
         this.digest = digest;
     }
 
-    @Scheduled(cron = "${toss.digest.cron:0 0 8 * * *}", zone = "Asia/Seoul")
+    @Scheduled(cron = "${toss.digest.cron:0 0 * * * *}", zone = "Asia/Seoul")
     public void send() {
         try {
             digest.sendDigest();
