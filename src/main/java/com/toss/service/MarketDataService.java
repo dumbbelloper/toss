@@ -4,6 +4,8 @@ import com.toss.client.MarketDataClient;
 import com.toss.client.dto.OrderbookResponse;
 import com.toss.client.dto.PriceResponse;
 import com.toss.common.TossApiException;
+import com.toss.common.TossTransientException;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
 
@@ -13,8 +15,17 @@ import java.util.function.Supplier;
 /**
  * 시세 조회 서비스. 선언형 클라이언트를 감싸 응답 envelope 를 벗기고,
  * HTTP 에러를 {@link TossApiException} 으로 변환한다.
+ * <p>429/5xx({@link TossTransientException}) 는 지수 백오프로 재시도한다(설정값은
+ * {@code toss.retry.*} 로 외부화). 4xx 는 재시도하지 않는다.
  */
 @Service
+@Retryable(
+        includes = TossTransientException.class,
+        maxRetriesString = "${toss.retry.max-retries:3}",
+        delayString = "${toss.retry.delay-ms:1000}",
+        multiplierString = "${toss.retry.multiplier:2.0}",
+        maxDelayString = "${toss.retry.max-delay-ms:8000}",
+        jitterString = "${toss.retry.jitter-ms:250}")
 public class MarketDataService {
 
     private final MarketDataClient client;
