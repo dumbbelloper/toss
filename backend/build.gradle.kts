@@ -64,7 +64,7 @@ tasks.withType<Test> {
 // 로컬 dev: 백엔드(BFF)가 Keycloak(https://localhost:8443, mkcert 로컬 CA)을 호출할 때
 // PKIX 검증을 통과하도록 dev 트러스트스토어를 JVM 에 주입한다. 파일이 있을 때만 적용.
 // 생성: ../infra/keycloak/trust-jvm.sh  (기본 CA 번들 + mkcert rootCA → Toss API HTTPS 도 유지)
-tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+tasks.named<JavaExec>("bootRun") {
     val devTrust = file("../infra/keycloak/tls/dev-truststore.p12")
     if (devTrust.exists()) {
         jvmArgs(
