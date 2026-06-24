@@ -46,11 +46,40 @@ toss:
 ./gradlew bootRun --args='--toss.smoke.enabled=true --toss.smoke.symbol=005930'
 ```
 
+## 인증 (BFF)
+
+이 백엔드는 웹 SPA 의 **BFF** 다. Keycloak(OIDC) confidential client 로서 로그인 흐름을
+중개하고, 브라우저엔 httpOnly 세션 쿠키만 내려간다(토큰은 서버 보관). 자세한 배경은
+루트 [`README.md`](../README.md) 참고.
+
+**사전 준비**: Keycloak 기동([`infra/`](../infra)) + JVM 트러스트(아래) 가 필요하다.
+
+```bash
+docker compose -f ../infra/docker-compose.yml up -d   # Keycloak + Postgres
+../infra/keycloak/trust-jvm.sh                          # 백엔드→Keycloak HTTPS 신뢰(1회)
+./gradlew bootRun
+```
+
+bootRun 은 `../infra/keycloak/tls/dev-truststore.p12` 가 있으면 자동으로 JVM 에 주입한다.
+
+| 엔드포인트 | 동작 |
+|-----------|------|
+| `GET /api/me` | 인증 시 사용자 정보(JSON), 미인증 시 **401** |
+| `GET /oauth2/authorization/keycloak` | 로그인 시작 → Keycloak 으로 302 |
+| `POST /logout` | 세션 종료 + Keycloak RP-initiated logout (CSRF 토큰 필요) |
+
+- OAuth2 client 설정: `application.yml` 의 `spring.security.oauth2.client`
+- 보안 구성: `com.toss.security` (`SecurityConfig`, SPA CSRF 핸들러, `/api/me`)
+- 미인증 시 리다이렉트 대신 **401** 을 반환한다 — SPA(fetch)가 받아 로그인을 시작하기 위함.
+
 ## 테스트
 
 ```bash
 ./gradlew test     # 단위 + 통합(Testcontainers PostgreSQL, Docker 필요)
 ```
+
+`@SpringBootTest` 는 Keycloak 없이 로드되도록 `src/test/resources/application.yml` 에
+정적 OAuth2 엔드포인트를 주입한다(issuer discovery 네트워크 호출 회피).
 
 ## 패키지 구조
 

@@ -14,6 +14,22 @@ spring:
   #   - 로컬 dev: compose.yaml 의 PostgreSQL (spring-boot-docker-compose 가 자동 기동/주입)
   #   - 테스트: Testcontainers (@ServiceConnection)
   #   - 운영: SPRING_DATASOURCE_URL/USERNAME/PASSWORD 환경변수
+  # BFF 인증: Keycloak(OIDC) confidential client. 브라우저엔 토큰 미노출(세션 쿠키).
+  #   secret 은 dev 기본값(realm import 와 동일) — 운영은 KEYCLOAK_WEB_BFF_SECRET 환경변수.
+  #   issuer HTTPS 호출엔 dev 트러스트스토어 필요(infra/keycloak/trust-jvm.sh, bootRun 자동 주입).
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: toss-web-bff
+            client-secret: ${KEYCLOAK_WEB_BFF_SECRET:dev-web-bff-secret-change-me}
+            authorization-grant-type: authorization_code
+            scope: openid, profile, email
+        provider:
+          keycloak:
+            issuer-uri: https://localhost:8443/realms/toss
+            user-name-attribute: preferred_username
 
 toss:
   base-url: https://openapi.tossinvest.com

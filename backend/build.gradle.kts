@@ -22,6 +22,10 @@ dependencies {
     // --- web (RestClient, @HttpExchange 클라이언트, SSE, 대시보드) ---
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+
+    // --- 보안 (BFF: Keycloak OIDC 로그인 + 세션 쿠키) ---
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.projectreactor:reactor-core") // SSE 시세 팬아웃용 Sinks/Flux
@@ -43,6 +47,7 @@ dependencies {
 
     // --- test ---
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
@@ -53,4 +58,17 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+// 로컬 dev: 백엔드(BFF)가 Keycloak(https://localhost:8443, mkcert 로컬 CA)을 호출할 때
+// PKIX 검증을 통과하도록 dev 트러스트스토어를 JVM 에 주입한다. 파일이 있을 때만 적용.
+// 생성: ../infra/keycloak/trust-jvm.sh  (기본 CA 번들 + mkcert rootCA → Toss API HTTPS 도 유지)
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    val devTrust = file("../infra/keycloak/tls/dev-truststore.p12")
+    if (devTrust.exists()) {
+        jvmArgs(
+            "-Djavax.net.ssl.trustStore=${devTrust.absolutePath}",
+            "-Djavax.net.ssl.trustStorePassword=changeit",
+        )
+    }
 }
