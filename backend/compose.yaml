@@ -1,5 +1,6 @@
-# 로컬 개발 인프라. `spring-boot-docker-compose` 가 bootRun 시 자동 기동/중지하고
-# 데이터소스 접속 정보를 주입합니다. 수동 기동: `docker compose up -d`.
+# 로컬 개발용 앱 PostgreSQL. `docker compose up -d` 로 직접 기동한다.
+# 접속 정보는 application.yml 에 기본값으로 명시(localhost:5432/toss, toss/toss).
+# (이전엔 spring-boot-docker-compose 가 자동 기동/주입했으나, IDE working-dir 의존성 문제로 제거)
 #
 # 버전은 안정화된 stable 태그로 고정 (재현성). 업그레이드 시 의도적으로만 변경.
 #

@@ -1,3 +1,4 @@
+
 plugins {
     java
     id("org.springframework.boot") version "4.1.0"
@@ -42,7 +43,8 @@ dependencies {
     // --- dev / lombok ---
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
-    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+    // spring-boot-docker-compose 는 사용하지 않는다(IDE working dir 의존성 문제).
+    // 로컬 postgres 는 `docker compose up -d` 로 직접 띄우고, 접속 정보는 application.yml 에 명시.
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 

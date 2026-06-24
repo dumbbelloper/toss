@@ -11,9 +11,13 @@ spring:
   flyway:
     enabled: true
   # 데이터소스 출처:
-  #   - 로컬 dev: compose.yaml 의 PostgreSQL (spring-boot-docker-compose 가 자동 기동/주입)
-  #   - 테스트: Testcontainers (@ServiceConnection)
-  #   - 운영: SPRING_DATASOURCE_URL/USERNAME/PASSWORD 환경변수
+  #   - 로컬 dev: 아래 기본값(직접 띄운 compose.yaml 의 PostgreSQL, `docker compose up -d`)
+  #   - 테스트: Testcontainers (@ServiceConnection 가 아래 값을 오버라이드)
+  #   - 운영: SPRING_DATASOURCE_URL/USERNAME/PASSWORD 환경변수가 아래 값을 오버라이드
+  datasource:
+    url: jdbc:postgresql://localhost:5432/toss
+    username: toss
+    password: toss
   # BFF 인증: Keycloak(OIDC) confidential client. 브라우저엔 토큰 미노출(세션 쿠키).
   #   secret 은 dev 기본값(realm import 와 동일) — 운영은 KEYCLOAK_WEB_BFF_SECRET 환경변수.
   #   issuer HTTPS 호출엔 dev 트러스트스토어 필요(infra/keycloak/trust-jvm.sh, bootRun 자동 주입).
