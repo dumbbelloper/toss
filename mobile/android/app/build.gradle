@@ -84,6 +84,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // react-native-app-auth: OAuth 리다이렉트(com.toss.app://oauth2redirect)를 받기 위한
+        // RedirectUriReceiverActivity 의 scheme. src/config.ts 의 redirectUrl scheme 과 일치해야 한다.
+        manifestPlaceholders = [appAuthRedirectScheme: 'com.toss.app']
     }
     signingConfigs {
         debug {

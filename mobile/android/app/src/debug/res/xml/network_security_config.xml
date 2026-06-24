@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  debug 빌드 전용 네트워크 보안 설정 (src/debug 이므로 release 엔 적용되지 않음).
+
+  - mkcert 로컬 CA 를 신뢰: app-auth 가 Keycloak(https://localhost:8443)의 discovery/token 을
+    호출할 때 PKIX 검증을 통과시킨다. 인증서는 res/raw/mkcert_rootca.pem 에 번들.
+  - cleartextTrafficPermitted: 백엔드 http://localhost:8080 (adb reverse) 호출 유지.
+    (networkSecurityConfig 를 지정하면 AndroidManifest 의 usesCleartextTraffic 대신 이 값이 적용됨)
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/mkcert_rootca" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
