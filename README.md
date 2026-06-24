@@ -1,80 +1,42 @@
 # toss
 
-토스증권 Open API 를 활용한 주식 모니터링·매매(매수/매도) 사이드 프로젝트.
+토스증권 Open API 기반 주식 모니터링·매매 플랫폼. **BFF 아키텍처**로 1개의 백엔드와 3개의 클라이언트(웹 SPA·Android·iOS)를 운영하며, 사용자 인증·인가는 **Keycloak(OIDC)** 으로 처리한다.
 
-## 기술 스택
-
-- **런타임**: Java 25, Spring Boot 4.1 (가상 스레드 기반 동기 처리)
-- **Toss 연동**: 선언형 HTTP 클라이언트(`@HttpExchange`) + `RestClient`, OAuth2 Client Credentials
-- **복원력**: 클라이언트측 레이트리밋(토큰 버킷, API 그룹별) + Spring FW7 네이티브 `@Retryable`
-- **영속성**: PostgreSQL 17 + Spring Data JDBC + Flyway
-- **대시보드(예정)**: Thymeleaf + HTMX + SSE
-- **알림(예정)**: Telegram Bot
-
-API 명세 원본은 [`docs/api/`](docs/api) 에 보관(`openapi.json` 이 단일 진실 공급원).
-
-## 사전 준비
-
-- **Docker** (로컬 PostgreSQL 컨테이너용 — `spring-boot-docker-compose` 가 자동 기동)
-- JDK 는 별도 설치 불필요 — Gradle 툴체인이 Java 25 를 자동 프로비저닝
-
-## 설정
-
-자격증명은 **`src/main/resources/application-local.yml`** 에 둔다(이 파일은 `.gitignore` 처리되어 커밋되지 않음):
-
-```yaml
-toss:
-  client-id: <발급받은 client_id>       # WTS > 설정 > Open API
-  client-secret: <발급받은 client_secret>
-  # account-seq: 1                       # 계좌·주문 API 사용 시 (GET /api/v1/accounts 로 확인)
-```
-
-운영 환경에서는 환경변수(`TOSS_CLIENT_ID`, `TOSS_CLIENT_SECRET`, `SPRING_DATASOURCE_*`)로 주입한다.
-
-## 실행
-
-```bash
-# PostgreSQL 은 bootRun 시 compose.yaml 로 자동 기동/중지된다.
-./gradlew bootRun
-```
-
-### 연동 스모크 체크 (선택)
-
-기동 시 현재가를 1회 조회해 토큰→레이트리밋→호출→파싱 전 과정을 검증한다(실패해도 기동은 계속):
-
-```bash
-./gradlew bootRun --args='--toss.smoke.enabled=true --toss.smoke.symbol=005930'
-```
-
-## 테스트
-
-```bash
-./gradlew test     # 단위 + 통합(Testcontainers PostgreSQL, Docker 필요)
-```
-
-## 패키지 구조
+## 아키텍처
 
 ```
-com.toss
-├─ config     설정 (TossProperties, RestClient, Resilience)
-├─ auth       OAuth2 토큰 관리 + Bearer 인터셉터
-├─ client     @HttpExchange 클라이언트 + DTO
-├─ ratelimit  API 그룹별 토큰 버킷 레이트리미터
-├─ common     공통 예외(TossApiException)
-├─ service    도메인 서비스 (envelope 해제 + 에러 매핑 + 재시도)
-└─ smoke      기동 시 연동 검증 러너
+  ┌─ web (React SPA) ─┐
+  ├─ android (Kotlin) ├──① OIDC 로그인 ──▶ Keycloak (Authorization Server)
+  └─ ios (Swift)      ┘                         │ 토큰 발급
+         │                                      │
+         │ 웹: httpOnly 세션쿠키 (BFF)            │ JWKS
+         │ 모바일: Bearer JWT                    ▼
+         ▼                              backend (Spring) ──검증
+  backend (Spring)                              │
+         │ ② Toss client_secret (machine-to-machine)
+         ▼
+  Toss Securities Open API
 ```
 
-## 레이트 리밋 / 재시도 설정 (선택)
+- **레이어 ① 사용자 인증** — Keycloak이 담당. 웹은 BFF(백엔드가 confidential client로 code flow 중개, 브라우저엔 토큰 미노출), 모바일은 public client + PKCE.
+- **레이어 ② Toss 연동** — 백엔드만 `client_secret`을 보유하는 machine-to-machine. Keycloak과 무관.
 
-`application.yml` 또는 환경변수로 조정 가능 (기본값):
+## 디렉터리 구조
 
-```yaml
-toss:
-  retry:
-    max-retries: 3       # 429/5xx 재시도 횟수
-    delay-ms: 1000       # 초기 백오프
-    multiplier: 2.0      # 지수 배수
-    max-delay-ms: 8000
-    jitter-ms: 250
-```
+| 경로 | 내용 |
+|------|------|
+| [`backend/`](backend) | Spring Boot (Java 25). Toss 연동 + BFF 인증 + REST API |
+| [`web/`](web) | React + Vite + Tailwind 4 + TanStack (SPA) |
+| [`android/`](android) | Kotlin + Jetpack Compose + AppAuth |
+| [`ios/`](ios) | Swift + SwiftUI + AppAuth |
+| [`infra/`](infra) | Keycloak + Postgres docker-compose, realm export |
+| [`docs/`](docs) | Toss API 명세(단일 진실 공급원) 등 공유 문서 |
+
+각 클라이언트는 자체 툴체인(Gradle / npm / Xcode)을 폴더 안에서 그대로 사용하는 **느슨한 폴리글랏 모노레포**다.
+
+## 시작하기
+
+각 앱의 실행법은 해당 폴더의 README를 참고한다.
+
+- 백엔드: [`backend/README.md`](backend/README.md)
+- 인증 인프라(Keycloak): [`infra/README.md`](infra/README.md)
