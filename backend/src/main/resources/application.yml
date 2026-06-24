@@ -26,6 +26,9 @@ spring:
             client-secret: ${KEYCLOAK_WEB_BFF_SECRET:dev-web-bff-secret-change-me}
             authorization-grant-type: authorization_code
             scope: openid, profile, email
+            # 콜백을 SPA dev 서버(:5173, Vite proxy)로 받아 브라우저가 :5173 에 머물게 한다.
+            # 운영에선 실제 서비스 origin 으로 교체(WEB_REDIRECT_URI).
+            redirect-uri: ${WEB_REDIRECT_URI:http://localhost:5173/login/oauth2/code/keycloak}
         provider:
           keycloak:
             issuer-uri: https://localhost:8443/realms/toss

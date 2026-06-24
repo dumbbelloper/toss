@@ -35,8 +35,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
                 .anyRequest().authenticated())
-            // 로그인 성공 후 사용자 정보로 리다이렉트(수동 검증 편의). SPA 도입 시 SPA 로 변경.
-            .oauth2Login(login -> login.defaultSuccessUrl("/api/me", true))
+            // 로그인 성공 후 SPA 루트("/")로 복귀. 콜백이 Vite proxy(:5173)를 거치므로
+            // 상대 경로 "/"는 브라우저 기준 :5173/ 로 해석된다.
+            .oauth2Login(login -> login.defaultSuccessUrl("/", true))
             .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrations)))
             // SPA(쿠키 세션) → CSRF 방어 필수. XSRF-TOKEN 쿠키(JS 가독) + BREACH 보호.
             .csrf(csrf -> csrf
