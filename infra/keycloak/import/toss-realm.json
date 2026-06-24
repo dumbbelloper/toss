@@ -63,9 +63,9 @@
       }
     },
     {
-      "clientId": "toss-android",
-      "name": "Toss Android (public, PKCE)",
-      "description": "Android 네이티브. secret 없음, Authorization Code + PKCE.",
+      "clientId": "toss-mobile",
+      "name": "Toss Mobile (React Native, public, PKCE)",
+      "description": "React Native(iOS·Android 통합). secret 없음, Authorization Code + PKCE. react-native-app-auth.",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": true,
@@ -73,24 +73,7 @@
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "redirectUris": [
-        "com.toss.app:/oauth2redirect"
-      ],
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      }
-    },
-    {
-      "clientId": "toss-ios",
-      "name": "Toss iOS (public, PKCE)",
-      "description": "iOS 네이티브. secret 없음, Authorization Code + PKCE.",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": true,
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "redirectUris": [
-        "com.toss.app:/oauth2redirect"
+        "com.toss.app://oauth2redirect"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
