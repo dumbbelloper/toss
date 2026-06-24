@@ -11,6 +11,9 @@ application-*-local.yml
 .env
 .env.*
 secrets/
+
+### Local TLS certs (mkcert, 기기 전용 — NEVER commit) ###
+infra/keycloak/tls/*.pem
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
