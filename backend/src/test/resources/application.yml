@@ -25,6 +25,11 @@ spring:
             jwk-set-uri: http://localhost:8443/jwks
             user-info-uri: http://localhost:8443/userinfo
             user-name-attribute: preferred_username
+      # resource server: issuer-uri(기동 시 discovery) 대신 정적 jwk-set-uri(지연 로딩)로
+      # 오프라인에서도 JwtDecoder 빈이 생성되게 한다.
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8443/jwks
 
 toss:
   base-url: https://openapi.tossinvest.com

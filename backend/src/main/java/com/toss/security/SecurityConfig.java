@@ -2,9 +2,13 @@ package com.toss.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
@@ -12,25 +16,52 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
- * BFF 보안 구성.
+ * 두 종류의 클라이언트를 위한 두 개의 보안 체인.
  *
- * <p>웹 SPA 는 Keycloak 을 직접 호출하지 않는다. 이 백엔드가 confidential client 로서
- * OIDC Authorization Code 흐름을 중개하고(토큰은 서버 세션에 보관), 브라우저엔 httpOnly
- * 세션 쿠키만 내려간다. SPA 는 {@code /api/**} 와 {@code /oauth2/authorization/keycloak}
- * 만 사용한다.
+ * <ol>
+ *   <li><b>resource server (모바일)</b> — {@code Authorization: Bearer} 헤더가 있는 요청.
+ *       Keycloak 이 발급한 access token(JWT)을 검증한다. stateless, CSRF 없음.
+ *   <li><b>BFF (웹)</b> — 그 외 모든 요청. OIDC 로그인 + httpOnly 세션 쿠키 + SPA CSRF.
+ * </ol>
  *
- * <p>미인증 요청은 로그인 페이지로 리다이렉트하지 않고 401 을 반환한다 — SPA(fetch)가
- * 401 을 받아 직접 로그인(full-page navigation)을 시작하기 위함이다.
+ * 모바일은 native PKCE 로 토큰을 직접 받아 Bearer 로 호출하고(react-native-app-auth),
+ * 웹은 토큰을 브라우저에 노출하지 않는 BFF 를 쓴다 — 같은 백엔드, 다른 신뢰 경계.
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /** Bearer 토큰을 가진 요청만 이 체인이 처리한다(@Order(1) 로 우선). */
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                            ClientRegistrationRepository clientRegistrations) throws Exception {
+    @Order(1)
+    SecurityFilterChain apiTokenChain(HttpSecurity http) throws Exception {
+        RequestMatcher hasBearer = (request) -> {
+            String auth = request.getHeader(HttpHeaders.AUTHORIZATION);
+            return auth != null && auth.startsWith("Bearer ");
+        };
+        http
+            .securityMatcher(hasBearer)
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .csrf(csrf -> csrf.disable())
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
+        return http.build();
+    }
+
+    /**
+     * 웹 BFF 체인. SPA 는 Keycloak 을 직접 호출하지 않고 이 백엔드가 OIDC 흐름을 중개하며,
+     * 브라우저엔 httpOnly 세션 쿠키만 내려간다. 미인증 요청은 401(리다이렉트 아님) — SPA(fetch)가
+     * 받아 로그인을 시작한다.
+     */
+    @Bean
+    @Order(2)
+    SecurityFilterChain bffChain(HttpSecurity http,
+                                 ClientRegistrationRepository clientRegistrations) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()

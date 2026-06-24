@@ -33,6 +33,10 @@ spring:
           keycloak:
             issuer-uri: https://localhost:8443/realms/toss
             user-name-attribute: preferred_username
+      # 모바일(React Native)은 Bearer JWT 로 /api/** 를 호출 → resource server 로 검증.
+      resourceserver:
+        jwt:
+          issuer-uri: https://localhost:8443/realms/toss
 
 toss:
   base-url: https://openapi.tossinvest.com

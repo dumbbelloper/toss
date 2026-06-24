@@ -23,9 +23,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
-    // --- 보안 (BFF: Keycloak OIDC 로그인 + 세션 쿠키) ---
+    // --- 보안 ---
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")        // 웹 BFF: OIDC 로그인 + 세션
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server") // 모바일: Bearer JWT 검증
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.projectreactor:reactor-core") // SSE 시세 팬아웃용 Sinks/Flux
