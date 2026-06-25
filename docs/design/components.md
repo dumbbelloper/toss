@@ -8,7 +8,7 @@
 | Button | variant/size/disabled | ⬜ | ⬜ | |
 | Card | 자산/시뮬 카드 컨테이너 | ⬜ | ⬜ | |
 | Money | 금액 표기(통화·부호·tabular) | ⬜ | ⬜ | 수익/손실 색 토큰 |
-| Chart | 라인/영역/캔들 (시세·백테스트) | ⬜ | ⬜ | web d3 · mobile Victory/ECharts |
+| Chart | 라인/영역 (시세·성과) | ✅ | ⬜ | web `ui/LineChart.tsx`(d3-scale/d3-shape+SVG, RN 이식가능). mobile=Victory/ECharts 예정 |
 | Table | 현금흐름·비교표 | ⬜ | ⬜ | |
 
 ## TODO

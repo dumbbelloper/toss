@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { isUnauthorized, login, useMe } from '../lib/auth'
+import { useCandles, useComparison } from '../lib/charts'
 import {
   formatMoney,
   formatPercent,
@@ -10,6 +11,10 @@ import {
   usePortfolio,
   type HoldingsItem,
 } from '../lib/dashboard'
+import { LineChart, type ChartSeries } from '../ui/LineChart'
+
+// 다중 시계열 색 팔레트.
+const PALETTE = ['#3182f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 
 export function PortfolioPage() {
   const me = useMe()
@@ -25,9 +30,82 @@ export function PortfolioPage() {
     <section className="space-y-8">
       <h1 className="text-2xl font-bold">자산 관리</h1>
       <PortfolioSummary />
+      <PriceChart />
       <Holdings />
+      <PerformanceChart />
       <OpenOrders />
     </section>
+  )
+}
+
+/** 시세 차트. 보유 종목 중 선택(없으면 샘플 005930). 계좌 없이도 동작. */
+function PriceChart() {
+  const portfolio = usePortfolio()
+  const holdings = portfolio.data?.items ?? []
+  const symbols = holdings.length
+    ? holdings.map((h) => ({ symbol: h.symbol, name: h.name || h.symbol }))
+    : [{ symbol: '005930', name: '삼성전자' }]
+
+  const [symbol, setSymbol] = useState(symbols[0].symbol)
+  const active = symbols.find((s) => s.symbol === symbol) ?? symbols[0]
+  const { data, isLoading, isError } = useCandles(active.symbol)
+
+  const closes = data?.candles.map((c) => c.closePrice) ?? []
+  const series: ChartSeries[] = [{ values: closes, color: '#3182f6', fill: true }]
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">시세 · {active.name}</h2>
+        {symbols.length > 1 && (
+          <select
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value)}
+            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
+          >
+            {symbols.map((s) => (
+              <option key={s.symbol} value={s.symbol}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        {isLoading ? (
+          <div className="h-[220px] animate-pulse rounded bg-gray-50" />
+        ) : isError || closes.length < 2 ? (
+          <p className="py-12 text-center text-sm text-gray-400">시세를 불러올 수 없습니다.</p>
+        ) : (
+          <LineChart series={series} formatY={(v) => Math.round(v).toLocaleString('ko-KR')} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** 보유 종목 매수가 대비 성과 비교(100=손익분기). 계좌 설정 시 표시. */
+function PerformanceChart() {
+  const { data, isLoading, isError } = useComparison()
+
+  if (isLoading || isError || !data || !data.length) return null
+
+  const series: ChartSeries[] = data
+    .filter((s) => s.points.length > 1)
+    .map((s, i) => ({
+      values: s.points.map((p) => p.value),
+      color: PALETTE[i % PALETTE.length],
+      label: s.name || s.symbol,
+    }))
+  if (!series.length) return null
+
+  return (
+    <div className="space-y-3">
+      <h2 className="text-lg font-semibold">매수가 대비 성과</h2>
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <LineChart series={series} baseline={100} formatY={(v) => v.toFixed(0)} />
+      </div>
+    </div>
   )
 }
 
