@@ -5,24 +5,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 은퇴 현금흐름 시뮬레이터 API (retiremoni 이식). 시장 데이터 불필요(규칙 기반 계산).
- */
+import java.time.LocalDate;
+
+/** 시뮬레이터 API. SIM01 = 배당(실분배금 세후 현금흐름). 비교 모드는 클라이언트가 심볼 2개로 2회 호출. */
 @RestController
 @RequestMapping("/api/sim")
 public class SimController {
 
-    private final DividendSimService dividend;
+    private final DividendSimService sim;
 
-    public SimController(DividendSimService dividend) {
-        this.dividend = dividend;
+    public SimController(DividendSimService sim) {
+        this.sim = sim;
     }
 
-    /** SIM01: ETF 세후 월배당. 예: {@code /api/sim/dividend?principal=100000000&yieldPercent=8} */
     @GetMapping("/dividend")
-    public DividendResult dividend(@RequestParam long principal,
-                                   @RequestParam(defaultValue = "8") double yieldPercent,
-                                   @RequestParam(defaultValue = "0") long otherFinancialIncome) {
-        return dividend.dividend(principal, yieldPercent, otherFinancialIncome);
+    public DividendSimService.Result dividend(
+            @RequestParam String symbol,
+            @RequestParam(defaultValue = "LUMP_SUM") DividendSimService.Contribution contribution,
+            @RequestParam(defaultValue = "10000000") double amount,
+            @RequestParam String start,
+            @RequestParam String end,
+            @RequestParam(defaultValue = "true") boolean reinvest) {
+        return sim.run(new DividendSimService.Params(
+                symbol, contribution, amount, LocalDate.parse(start), LocalDate.parse(end), reinvest));
     }
 }
