@@ -1,0 +1,40 @@
+/* 곳간 로그인 브랜드 오버레이 (keycloak.v2 / PatternFly v5 위에). */
+
+/* 헤더: 로고를 위에 얹고, 그 아래 realm displayName("곳간") 텍스트. */
+#kc-header-wrapper {
+  background-image: url('../img/logo.svg');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 44px 44px;
+  padding-top: 58px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2933;
+  letter-spacing: -0.01em;
+}
+
+/* 주 버튼(로그인) — 브랜드 블루. */
+.pf-v5-c-button.pf-m-primary,
+.pf-c-button.pf-m-primary,
+input[type='submit'].pf-m-primary {
+  background-color: #3182f6;
+  border-color: #3182f6;
+}
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-c-button.pf-m-primary:hover {
+  background-color: #2b74e0;
+  border-color: #2b74e0;
+}
+
+/* 링크. */
+a {
+  color: #3182f6;
+}
+a:hover {
+  color: #2b74e0;
+}
+
+/* 카드를 살짝 부드럽게. */
+.card-pf {
+  border-radius: 14px;
+}

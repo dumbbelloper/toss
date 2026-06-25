@@ -51,6 +51,17 @@ docker compose -f infra/docker-compose.yml down       # 정지 (-v 로 볼륨까
 | `toss-android` | public | Auth Code + PKCE | Android 네이티브 (AppAuth) |
 | `toss-ios` | public | Auth Code + PKCE | iOS 네이티브 (AppAuth) |
 
+## 로그인 테마 (곳간)
+
+로그인 화면은 **곳간 브랜드 커스텀 테마**(`keycloak/themes/gotgan/`)를 쓴다 — 기본 `keycloak.v2`
+위에 로고·브랜드 컬러(#3182f6)만 덧입힘. realm `loginTheme: gotgan`(`toss-realm.json`),
+displayName `곳간`. web(BFF)·mobile(PKCE) 모두 이 한 페이지를 거친다.
+
+- 테마는 `docker-compose.yml`이 `./keycloak/themes`를 컨테이너에 마운트.
+- 개발 편의로 `KC_SPI_THEME_CACHE_THEMES=false` → 테마 CSS 수정이 **새로고침에 바로 반영**.
+- 신규 환경: `down -v` 후 `up` 하면 realm JSON 에서 loginTheme 가 자동 적용. 기존 DB 가 있으면
+  realm 재임포트가 안 되므로 admin 콘솔/REST 로 `loginTheme=gotgan` 만 설정하면 된다.
+
 ## 토큰 정책 (production급)
 
 | 항목 | 값 | 의미 |

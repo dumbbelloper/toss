@@ -1,27 +1,30 @@
 {
   "realm": "toss",
   "enabled": true,
-  "displayName": "Toss",
-
+  "displayName": "곳간",
+  "loginTheme": "gotgan",
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
-
   "accessTokenLifespan": 300,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
   "revokeRefreshToken": true,
   "refreshTokenMaxReuse": 0,
-
   "roles": {
     "realm": [
-      { "name": "USER", "description": "기본 사용자" },
-      { "name": "ADMIN", "description": "관리자" }
+      {
+        "name": "USER",
+        "description": "기본 사용자"
+      },
+      {
+        "name": "ADMIN",
+        "description": "관리자"
+      }
     ]
   },
-
   "users": [
     {
       "username": "tester",
@@ -31,12 +34,17 @@
       "firstName": "Test",
       "lastName": "User",
       "credentials": [
-        { "type": "password", "value": "test1234", "temporary": false }
+        {
+          "type": "password",
+          "value": "test1234",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["USER"]
+      "realmRoles": [
+        "USER"
+      ]
     }
   ],
-
   "clients": [
     {
       "clientId": "toss-web-bff",

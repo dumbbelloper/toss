@@ -44,12 +44,16 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       # --- 헬스/메트릭 (관리 포트 9000) ---
       KC_HEALTH_ENABLED: "true"
+      # --- 테마(개발): 캐시 끄고 정적 자원 max-age 0 → 테마 수정이 새로고침에 바로 반영 ---
+      KC_SPI_THEME_CACHE_THEMES: "false"
+      KC_SPI_THEME_STATIC_MAX_AGE: "-1"
     ports:
       - "8443:8443"     # HTTPS — 브라우저 front-channel + 백엔드 back-channel
       - "9000:9000"     # 관리(헬스/메트릭)
     volumes:
       - ./keycloak/tls:/opt/keycloak/conf/tls:ro       # mkcert 인증서 (gitignore)
       - ./keycloak/import:/opt/keycloak/data/import:ro  # realm export (버전관리)
+      - ./keycloak/themes:/opt/keycloak/themes:ro       # 곳간 커스텀 로그인 테마
 
 volumes:
   keycloak-pgdata:
