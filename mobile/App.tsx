@@ -16,6 +16,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isUnauthorized, useLogin, useLogout, useMe } from './src/auth/auth';
@@ -156,12 +157,14 @@ function Button({
 function App() {
   const isDark = useColorScheme() === 'dark';
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <Root />
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+          <Root />
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
