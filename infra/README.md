@@ -48,13 +48,12 @@ docker compose -f infra/docker-compose.yml down       # 정지 (-v 로 볼륨까
 | clientId | 타입 | flow | 용도 |
 |----------|------|------|------|
 | `toss-web-bff` | confidential (secret) | Auth Code + PKCE | 웹 SPA용 BFF (백엔드가 secret 보유) |
-| `toss-android` | public | Auth Code + PKCE | Android 네이티브 (AppAuth) |
-| `toss-ios` | public | Auth Code + PKCE | iOS 네이티브 (AppAuth) |
+| `toss-mobile` | public | Auth Code + PKCE | React Native 통합(iOS·Android), react-native-app-auth |
 
 ## 로그인 테마 (곳간)
 
 로그인 화면은 **곳간 브랜드 커스텀 테마**(`keycloak/themes/gotgan/`)를 쓴다 — 기본 `keycloak.v2`
-위에 로고·브랜드 컬러(#3182f6)만 덧입힘. realm `loginTheme: gotgan`(`toss-realm.json`),
+위에 로고·브랜드 컬러(#b5703c clay)만 덧입힘. realm `loginTheme: gotgan`(`toss-realm.json`),
 displayName `곳간`. web(BFF)·mobile(PKCE) 모두 이 한 페이지를 거친다.
 
 - 테마는 `docker-compose.yml`이 `./keycloak/themes`를 컨테이너에 마운트.
