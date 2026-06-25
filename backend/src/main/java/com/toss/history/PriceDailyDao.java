@@ -101,6 +101,34 @@ public class PriceDailyDao {
         return desc.reversed();
     }
 
+    /** 시뮬레이터용: 기간 내 일별 가격(과거→현재). */
+    public List<PriceRow> priceRange(String symbol, LocalDate from, LocalDate to) {
+        return jdbc.getJdbcTemplate().query(
+                "select date, close, adj_close from price_daily where symbol = ? and date between ? and ? order by date",
+                (rs, i) -> new PriceRow(rs.getObject("date", LocalDate.class),
+                        rs.getDouble("close"), rs.getDouble("adj_close")),
+                symbol, from, to);
+    }
+
+    /** 시뮬레이터용: 기간 내 실분배금(과거→현재). */
+    public List<DividendRow> dividendsRange(String symbol, LocalDate from, LocalDate to) {
+        return jdbc.getJdbcTemplate().query(
+                "select ex_date, amount from dividend_daily where symbol = ? and ex_date between ? and ? order by ex_date",
+                (rs, i) -> new DividendRow(rs.getObject("ex_date", LocalDate.class), rs.getDouble("amount")),
+                symbol, from, to);
+    }
+
+    /** 종목 메타(이름·상장통화·세금분류). */
+    public record SymbolMeta(String name, String currency, String taxClass) {
+    }
+
+    public SymbolMeta symbolMeta(String symbol) {
+        return jdbc.getJdbcTemplate().queryForObject(
+                "select name, currency, tax_class from symbol_universe where symbol = ?",
+                (rs, i) -> new SymbolMeta(rs.getString("name"), rs.getString("currency"), rs.getString("tax_class")),
+                symbol);
+    }
+
     /** 환율 시계열(forward-fill 용 floorEntry 조회). pair 예: 'USDKRW'. to 이하 전부. */
     public NavigableMap<LocalDate, Double> fxSeries(String pair, LocalDate to) {
         NavigableMap<LocalDate, Double> map = new TreeMap<>();
