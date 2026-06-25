@@ -16,8 +16,9 @@ ASWebAuthenticationSession)에서 로그인하므로 WebView 가 아니다.
 
 엔드포인트/이슈어 등 설정은 `src/config.ts` 에 모여 있다.
 
-> **상태:** Android E2E 검증 완료 — 로그인 → `/api/me` 200(사용자 정보 표시)까지 동작.
-> iOS 는 CocoaPods/Info.plist 설정 후 검증 예정.
+> **상태:** Android · iOS E2E 검증 완료 — 로그인 → `/api/me` 200(사용자 정보 표시)까지 동작.
+> iOS 상세 절차(CocoaPods·app-auth 배선·Keychain entitlement·시뮬레이터 mkcert 신뢰·실행)는
+> [`docs/engineering/mobile.md`](../docs/engineering/mobile.md) 참고.
 
 ## 로컬 실행 (Android)
 
