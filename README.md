@@ -39,3 +39,8 @@
 
 - 백엔드: [`backend/README.md`](backend/README.md)
 - 인증 인프라(Keycloak): [`infra/README.md`](infra/README.md)
+
+## 더 보기
+
+- **제품 비전·로드맵**: [`docs/PRODUCT.md`](docs/PRODUCT.md) — 기둥(자산관리·백테스팅·은퇴시뮬), 원칙, 보류 아이디어
+- **문서 체계 전체**: [`docs/README.md`](docs/README.md) — 기획·디자인·데이터·엔지니어링·결정 기록
