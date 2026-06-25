@@ -27,6 +27,12 @@ export function RootLayout() {
                 >
                   자산 관리
                 </Link>
+                <Link
+                  to="/backtest"
+                  className="hover:text-gray-900 [&.active]:font-semibold [&.active]:text-gray-900"
+                >
+                  백테스팅
+                </Link>
               </nav>
             )}
           </div>
