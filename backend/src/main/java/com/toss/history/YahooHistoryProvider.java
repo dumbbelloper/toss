@@ -71,6 +71,30 @@ public class YahooHistoryProvider {
         return rates;
     }
 
+    /** 실분배금 이벤트(events=div). 1주당 분배금(상장 통화). events.dividends 는 {ts:{amount,date}} 객체. */
+    public List<DividendRow> dividendHistory(String symbol) {
+        JsonNode result = fetch(symbol);
+        if (result == null) {
+            return List.of();
+        }
+        ZoneId zone = exchangeZone(result);
+        JsonNode divs = result.path("events").path("dividends");
+        if (divs.isMissingNode() || divs.isEmpty()) {
+            return List.of();
+        }
+        List<DividendRow> out = new ArrayList<>();
+        for (JsonNode d : divs) { // 객체 노드 순회 = 값들
+            JsonNode amt = d.path("amount");
+            long t = d.path("date").asLong(0);
+            if (!amt.isNumber() || t == 0) {
+                continue;
+            }
+            LocalDate date = Instant.ofEpochSecond(t).atZone(zone).toLocalDate();
+            out.add(new DividendRow(date, amt.doubleValue()));
+        }
+        return out;
+    }
+
     private JsonNode fetch(String symbol) {
         JsonNode root = yahoo.get()
                 .uri(b -> b.path("/v8/finance/chart/{s}")
