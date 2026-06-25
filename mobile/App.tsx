@@ -21,12 +21,13 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { isUnauthorized, useLogin, useLogout, useMe } from './src/auth/auth';
 import { BacktestScreen } from './src/screens/BacktestScreen';
 import { PortfolioScreen } from './src/screens/PortfolioScreen';
+import { SimulatorScreen } from './src/screens/SimulatorScreen';
 import { LogoMark } from './src/ui/Logo';
 import { colors } from './src/ui/theme';
 
 const queryClient = new QueryClient();
 
-type Tab = 'home' | 'portfolio' | 'backtest';
+type Tab = 'home' | 'portfolio' | 'backtest' | 'sim';
 
 /** 로그인 시 홈/자산 탭 전환. 미로그인이면 홈(인증 화면)만. */
 function Root() {
@@ -41,6 +42,8 @@ function Root() {
           <PortfolioScreen />
         ) : loggedIn && tab === 'backtest' ? (
           <BacktestScreen />
+        ) : loggedIn && tab === 'sim' ? (
+          <SimulatorScreen />
         ) : (
           <AuthScreen />
         )}
@@ -54,10 +57,10 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.tabBar, { paddingBottom: insets.bottom + 8 }]}>
-      {(['home', 'portfolio', 'backtest'] as const).map(t => (
+      {(['home', 'portfolio', 'backtest', 'sim'] as const).map(t => (
         <Pressable key={t} onPress={() => onChange(t)} style={styles.tab}>
           <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-            {t === 'home' ? '홈' : t === 'portfolio' ? '자산' : '백테스트'}
+            {t === 'home' ? '홈' : t === 'portfolio' ? '자산' : t === 'backtest' ? '백테스트' : '시뮬'}
           </Text>
         </Pressable>
       ))}
