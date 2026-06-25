@@ -1,6 +1,7 @@
 import { Link, Outlet } from '@tanstack/react-router'
 
 import { isUnauthorized, useLogout, useMe } from '../lib/auth'
+import { LogoMark } from './Logo'
 
 export function RootLayout() {
   const me = useMe()
@@ -11,8 +12,9 @@ export function RootLayout() {
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-5">
-            <Link to="/" className="text-lg font-bold text-toss-blue">
-              toss
+            <Link to="/" className="flex items-center gap-2 text-lg font-bold text-gray-900">
+              <LogoMark size={22} />
+              곳간
             </Link>
             {me.isSuccess && (
               <nav className="flex items-center gap-4 text-sm text-gray-500">
