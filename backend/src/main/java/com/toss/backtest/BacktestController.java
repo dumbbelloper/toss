@@ -27,9 +27,11 @@ public class BacktestController {
                               @RequestParam(defaultValue = "14") int rsiPeriod,
                               @RequestParam(defaultValue = "30") double rsiBuyBelow,
                               @RequestParam(defaultValue = "70") double rsiSellAbove,
-                              @RequestParam(defaultValue = "200") int count,
-                              @RequestParam(defaultValue = "1000000") double capital) {
+                              @RequestParam(defaultValue = "1250") int count,
+                              @RequestParam(defaultValue = "1000000") double capital,
+                              @RequestParam(defaultValue = "true") boolean reinvest,
+                              @RequestParam(defaultValue = "USD") String currency) {
         Backtester.Params params = new Backtester.Params(shortWindow, longWindow, rsiPeriod, rsiBuyBelow, rsiSellAbove);
-        return service.run(symbol, strategy, params, count, capital);
+        return service.run(symbol, strategy, params, count, capital, reinvest, currency);
     }
 }
