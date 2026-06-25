@@ -99,7 +99,7 @@ function AuthScreen() {
       </View>
 
       {login.error && (
-        <Text style={styles.errorText}>로그인 실패: {(login.error as Error).message}</Text>
+        <Text style={styles.errorText}>로그인에 실패했어요. 잠시 후 다시 시도해주세요.</Text>
       )}
     </View>
   );

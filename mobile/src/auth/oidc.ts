@@ -35,12 +35,38 @@ function toSession(result: AuthorizeResult | RefreshResult, prev?: SavedSession)
   };
 }
 
-/** 시스템 브라우저로 로그인하고 토큰을 저장한다. 성공 시 세션을 반환. */
-export async function signInWithKeycloak(): Promise<SavedSession> {
-  const result = await authorize(config);
-  const session = toSession(result);
-  await saveSession(session);
-  return session;
+/**
+ * 사용자가 로그인 시트를 "취소" 했는지 판별한다.
+ *
+ * react-native-app-auth(iOS)는 취소를 별도 코드로 구분하지 않고 `authentication_failed` 로
+ * 던지며, 메시지는 "The operation couldn't be completed ..."(general 도메인 -3) 이다.
+ * Android 는 "User cancelled flow". 둘 다 메시지로 감지한다. 취소는 에러가 아니다.
+ */
+function isUserCancellation(err: unknown): boolean {
+  const message = ((err as { message?: string })?.message ?? '').toLowerCase();
+  return (
+    message.includes('cancel') ||
+    message.includes("operation couldn't be completed") ||
+    message.includes('operation couldn’t be completed')
+  );
+}
+
+/**
+ * 시스템 브라우저로 로그인하고 토큰을 저장한다. 성공 시 세션을 반환.
+ * 사용자가 취소하면 에러가 아니라 `null` 을 반환(화면은 그냥 로그인 상태 유지).
+ */
+export async function signInWithKeycloak(): Promise<SavedSession | null> {
+  try {
+    const result = await authorize(config);
+    const session = toSession(result);
+    await saveSession(session);
+    return session;
+  } catch (err) {
+    if (isUserCancellation(err)) {
+      return null;
+    }
+    throw err;
+  }
 }
 
 /**
