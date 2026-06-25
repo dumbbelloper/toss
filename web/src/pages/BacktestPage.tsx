@@ -10,6 +10,7 @@ import {
   type Strategy,
 } from '../lib/backtest'
 import { formatMoney, formatPercent, signColor } from '../lib/dashboard'
+import { isKrListed, symbolLabel } from '../lib/symbol'
 import { LineChart, type ChartSeries } from '../ui/LineChart'
 
 const DEFAULTS: BacktestParams = {
@@ -76,8 +77,9 @@ export function BacktestPage() {
           >
             {(universe.length ? universe : [{ symbol: form.symbol, name: '' }]).map((u) => (
               <option key={u.symbol} value={u.symbol}>
-                {u.symbol}
-                {'name' in u && u.name ? ` · ${u.name}` : ''}
+                {isKrListed(u.symbol)
+                  ? u.name || u.symbol
+                  : `${u.symbol}${'name' in u && u.name ? ' · ' + u.name : ''}`}
               </option>
             ))}
           </select>
@@ -174,7 +176,13 @@ export function BacktestPage() {
         </p>
       )}
 
-      {data && submitted && <Results data={data} currency={submitted.currency} />}
+      {data && submitted && (
+        <Results
+          data={data}
+          currency={submitted.currency}
+          symbolName={universe.find((u) => u.symbol === data.symbol)?.name}
+        />
+      )}
 
       <style>{`
         .input { width:100%; border:1px solid var(--color-line); background:#fff; border-radius:8px;
@@ -188,9 +196,11 @@ export function BacktestPage() {
 function Results({
   data,
   currency,
+  symbolName,
 }: {
   data: import('../lib/backtest').BacktestResult
   currency: Currency
+  symbolName?: string
 }) {
   const series: ChartSeries[] = [
     { values: data.equity.map((e) => e.value), color: '#b5703c', fill: true },
@@ -236,7 +246,7 @@ function Results({
           }
         />
         <p className="text-xs text-muted">
-          {data.symbol} · {data.params} · {data.bars}봉
+          {symbolLabel(data.symbol, symbolName)} · {data.params} · {data.bars}봉
         </p>
       </div>
     </div>

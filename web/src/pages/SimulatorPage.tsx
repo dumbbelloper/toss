@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react'
 import { isUnauthorized, login, useMe } from '../lib/auth'
 import { useUniverse } from '../lib/backtest'
 import { formatMoney } from '../lib/dashboard'
+import { isKrListed, symbolLabel } from '../lib/symbol'
 import {
   TAX_CLASS_LABEL,
   useDividend,
@@ -84,7 +85,7 @@ export function SimulatorPage() {
             <Select value={form.symbol} onChange={(v) => set('symbol', v)}>
               {options.map((o) => (
                 <option key={o.symbol} value={o.symbol}>
-                  {o.name} ({o.symbol})
+                  {isKrListed(o.symbol) ? o.name : `${o.name} (${o.symbol})`}
                 </option>
               ))}
             </Select>
@@ -206,8 +207,8 @@ function Single({ r }: { r: DividendResult }) {
 
 function Compare({ a, b }: { a: DividendResult; b: DividendResult }) {
   const series: ChartSeries[] = [
-    { values: a.timeline.map((p) => p.cumulativeNet), color: '#b5703c', label: a.symbol },
-    { values: b.timeline.map((p) => p.cumulativeNet), color: '#2f6fed', label: b.symbol },
+    { values: a.timeline.map((p) => p.cumulativeNet), color: '#b5703c', label: symbolLabel(a.symbol, a.name) },
+    { values: b.timeline.map((p) => p.cumulativeNet), color: '#2f6fed', label: symbolLabel(b.symbol, b.name) },
   ]
   const longer = a.timeline.length >= b.timeline.length ? a : b
   const diff = a.totalNetDividend - b.totalNetDividend
@@ -219,7 +220,7 @@ function Compare({ a, b }: { a: DividendResult; b: DividendResult }) {
       </div>
 
       <div className="rounded-xl border border-line bg-surface p-4 text-sm">
-        <b>{a.symbol}</b> 세후 분배금이 <b>{b.symbol}</b> 대비{' '}
+        <b>{symbolLabel(a.symbol, a.name)}</b> 세후 분배금이 <b>{symbolLabel(b.symbol, b.name)}</b> 대비{' '}
         <span className={diff >= 0 ? 'font-semibold text-gain' : 'font-semibold text-loss'}>
           {diff >= 0 ? '+' : ''}
           {formatMoney(Math.round(diff), 'KRW')}
@@ -246,7 +247,7 @@ function CompareCol({ r, accent }: { r: DividendResult; accent?: boolean }) {
   return (
     <div className={`rounded-xl border bg-surface p-5 ${accent ? 'border-accent' : 'border-line'}`}>
       <div className="flex items-baseline justify-between">
-        <span className="font-semibold">{r.symbol}</span>
+        <span className="font-semibold">{symbolLabel(r.symbol, r.name)}</span>
         <ClassBadge r={r} />
       </div>
       <div className="mt-2 text-2xl font-extrabold text-accent">

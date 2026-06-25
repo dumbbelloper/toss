@@ -13,6 +13,7 @@ import {
 
 import { formatMoney } from '../api/dashboard';
 import { useUniverse } from '../api/backtest';
+import { symbolLabel } from '../api/symbol';
 import {
   TAX_CLASS_LABEL,
   useDividend,
@@ -181,8 +182,8 @@ function Compare({ a, b }: { a: DividendResult; b: DividendResult }) {
   const longer = a.timeline.length >= b.timeline.length ? a : b;
   const diff = a.totalNetDividend - b.totalNetDividend;
   const series: ChartSeries[] = [
-    { values: a.timeline.map(p => p.cumulativeNet), color: colors.accent, label: a.symbol },
-    { values: b.timeline.map(p => p.cumulativeNet), color: colors.loss, label: b.symbol },
+    { values: a.timeline.map(p => p.cumulativeNet), color: colors.accent, label: symbolLabel(a.symbol, a.name) },
+    { values: b.timeline.map(p => p.cumulativeNet), color: colors.loss, label: symbolLabel(b.symbol, b.name) },
   ];
   return (
     <View style={{ gap: 12, marginTop: 16 }}>
@@ -192,7 +193,7 @@ function Compare({ a, b }: { a: DividendResult; b: DividendResult }) {
       </View>
       <View style={styles.diffCard}>
         <Text style={styles.diffText}>
-          {a.symbol} 세후 분배금이 {b.symbol} 대비{' '}
+          {symbolLabel(a.symbol, a.name)} 세후 분배금이 {symbolLabel(b.symbol, b.name)} 대비{' '}
           <Text style={{ color: diff >= 0 ? colors.gain : colors.loss, fontWeight: '700' }}>
             {diff >= 0 ? '+' : ''}
             {formatMoney(Math.round(diff), 'KRW')}
@@ -219,7 +220,7 @@ function CompareCol({ r, accent }: { r: DividendResult; accent?: boolean }) {
   return (
     <View style={[styles.col, accent && { borderColor: colors.accent }]}>
       <View style={styles.between}>
-        <Text style={styles.colSym}>{r.symbol}</Text>
+        <Text style={styles.colSym}>{symbolLabel(r.symbol, r.name)}</Text>
         <ClassBadge r={r} />
       </View>
       <Text style={styles.colValue}>{formatMoney(Math.round(r.totalNetDividend), 'KRW')}</Text>
@@ -319,7 +320,7 @@ function SymbolChips({
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
       {options.map(o => (
         <Pressable key={o.symbol} onPress={() => onChange(o.symbol)} style={[styles.chip, value === o.symbol && styles.chipOn]}>
-          <Text style={[styles.chipText, value === o.symbol && styles.chipTextOn]}>{o.symbol}</Text>
+          <Text style={[styles.chipText, value === o.symbol && styles.chipTextOn]}>{symbolLabel(o.symbol, o.name)}</Text>
         </Pressable>
       ))}
     </ScrollView>
