@@ -33,4 +33,10 @@ public class HistoryController {
     public List<Map<String, Object>> coverage() {
         return dao.coverage();
     }
+
+    /** 백테스트 종목 선택용 유니버스(+커버리지). */
+    @GetMapping("/universe")
+    public List<Map<String, Object>> universe() {
+        return dao.universe();
+    }
 }

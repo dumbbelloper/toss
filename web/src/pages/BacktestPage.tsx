@@ -1,24 +1,34 @@
 import { useState, type ReactNode } from 'react'
 
 import { isUnauthorized, login, useMe } from '../lib/auth'
-import { STRATEGIES, useBacktest, type BacktestParams, type Strategy } from '../lib/backtest'
+import {
+  STRATEGIES,
+  useBacktest,
+  useUniverse,
+  type BacktestParams,
+  type Currency,
+  type Strategy,
+} from '../lib/backtest'
 import { formatMoney, formatPercent, signColor } from '../lib/dashboard'
 import { LineChart, type ChartSeries } from '../ui/LineChart'
 
 const DEFAULTS: BacktestParams = {
-  symbol: '005930',
-  strategy: 'SMA_CROSS',
+  symbol: 'SPY',
+  strategy: 'BUY_AND_HOLD',
   shortWindow: 5,
   longWindow: 20,
   rsiPeriod: 14,
   rsiBuyBelow: 30,
   rsiSellAbove: 70,
-  count: 200,
+  count: 1260,
   capital: 1_000_000,
+  reinvest: true,
+  currency: 'USD',
 }
 
 export function BacktestPage() {
   const me = useMe()
+  const universe = useUniverse().data ?? []
   const [form, setForm] = useState<BacktestParams>(DEFAULTS)
   const [submitted, setSubmitted] = useState<BacktestParams | null>(null)
   const { data, isFetching, isError, error } = useBacktest(submitted)
@@ -47,7 +57,7 @@ export function BacktestPage() {
       <div>
         <h1 className="text-2xl font-bold">백테스팅</h1>
         <p className="mt-1 text-sm text-muted">
-          토스 일봉 시세로 전략을 과거 데이터에 적용해 성과를 검증합니다. 예측이 아니라 회고입니다.
+          내부 DB의 수정주가(상장일~현재)로 전략을 검증합니다. 예측이 아니라 회고입니다.
         </p>
       </div>
 
@@ -58,13 +68,39 @@ export function BacktestPage() {
           setSubmitted({ ...form })
         }}
       >
-        <Field label="종목 코드">
-          <input
+        <Field label="종목">
+          <select
             value={form.symbol}
-            onChange={(e) => set('symbol', e.target.value.trim())}
+            onChange={(e) => set('symbol', e.target.value)}
             className="input"
-            placeholder="005930"
-          />
+          >
+            {(universe.length ? universe : [{ symbol: form.symbol, name: '' }]).map((u) => (
+              <option key={u.symbol} value={u.symbol}>
+                {u.symbol}
+                {'name' in u && u.name ? ` · ${u.name}` : ''}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="배당">
+          <select
+            value={form.reinvest ? 'y' : 'n'}
+            onChange={(e) => set('reinvest', e.target.value === 'y')}
+            className="input"
+          >
+            <option value="y">배당 재투자 (총수익)</option>
+            <option value="n">가격 수익 (배당 제외)</option>
+          </select>
+        </Field>
+        <Field label="통화">
+          <select
+            value={form.currency}
+            onChange={(e) => set('currency', e.target.value as Currency)}
+            className="input"
+          >
+            <option value="USD">USD (달러 기준)</option>
+            <option value="KRW">KRW (당시 환율 적용)</option>
+          </select>
         </Field>
         <Field label="전략">
           <select
@@ -104,10 +140,20 @@ export function BacktestPage() {
           </>
         )}
 
-        <Field label="기간 (봉 수)">
-          <NumberInput value={form.count} onChange={(v) => set('count', v)} />
+        <Field label="기간">
+          <select
+            value={form.count}
+            onChange={(e) => set('count', Number(e.target.value))}
+            className="input"
+          >
+            <option value={252}>최근 1년</option>
+            <option value={756}>최근 3년</option>
+            <option value={1260}>최근 5년</option>
+            <option value={2520}>최근 10년</option>
+            <option value={100000}>전체 (상장일~현재)</option>
+          </select>
         </Field>
-        <Field label="초기 자본 (원)">
+        <Field label="초기 자본">
           <NumberInput value={form.capital} onChange={(v) => set('capital', v)} step={100_000} />
         </Field>
 
@@ -128,7 +174,7 @@ export function BacktestPage() {
         </p>
       )}
 
-      {data && <Results data={data} />}
+      {data && submitted && <Results data={data} currency={submitted.currency} />}
 
       <style>{`
         .input { width:100%; border:1px solid var(--color-line); background:#fff; border-radius:8px;
@@ -139,7 +185,13 @@ export function BacktestPage() {
   )
 }
 
-function Results({ data }: { data: import('../lib/backtest').BacktestResult }) {
+function Results({
+  data,
+  currency,
+}: {
+  data: import('../lib/backtest').BacktestResult
+  currency: Currency
+}) {
   const series: ChartSeries[] = [
     { values: data.equity.map((e) => e.value), color: '#b5703c', fill: true },
   ]
@@ -169,13 +221,18 @@ function Results({ data }: { data: import('../lib/backtest').BacktestResult }) {
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-semibold">자본 곡선</h2>
           <span className="text-sm text-muted">
-            {formatMoney(data.initialCapital, 'KRW')} → {formatMoney(Math.round(data.finalEquity), 'KRW')}
+            {formatMoney(data.initialCapital, currency)} →{' '}
+            {formatMoney(Math.round(data.finalEquity), currency)}
           </span>
         </div>
         <LineChart
           series={series}
           baseline={data.initialCapital}
-          formatY={(v) => Math.round(v / 10000).toLocaleString('ko-KR') + '만'}
+          formatY={(v) =>
+            currency === 'KRW'
+              ? Math.round(v / 10000).toLocaleString('ko-KR') + '만'
+              : '$' + Math.round(v).toLocaleString('en-US')
+          }
         />
         <p className="text-xs text-muted">
           {data.symbol} · {data.params} · {data.bars}봉
