@@ -32,12 +32,14 @@ type Tab = 'home' | 'portfolio' | 'backtest' | 'sim';
 /** 로그인 시 홈/자산 탭 전환. 미로그인이면 홈(인증 화면)만. */
 function Root() {
   const me = useMe();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('home');
   const loggedIn = !!me.data;
 
   return (
     <View style={styles.root}>
-      <View style={styles.screen}>
+      {/* 모든 탭 화면에 상단 safe-area inset 적용 → 상태바(시간/노치)와 콘텐츠가 겹치지 않게. */}
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
         {loggedIn && tab === 'portfolio' ? (
           <PortfolioScreen />
         ) : loggedIn && tab === 'backtest' ? (
@@ -69,7 +71,6 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
 }
 
 function AuthScreen() {
-  const insets = useSafeAreaInsets();
   const me = useMe();
   const login = useLogin();
   const logout = useLogout();
@@ -77,7 +78,7 @@ function AuthScreen() {
   const busy = me.isLoading || login.isPending || logout.isPending;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
+    <View style={[styles.container, { paddingTop: 24 }]}>
       <View style={styles.brand}>
         <LogoMark size={26} />
         <Text style={styles.title}>곳간</Text>
