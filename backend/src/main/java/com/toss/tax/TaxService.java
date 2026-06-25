@@ -17,6 +17,26 @@ public class TaxService {
     public static final double COMPREHENSIVE_TAX_THRESHOLD = 20_000_000; // 금융소득종합과세 2,000만
     public static final double HEALTH_INSURANCE_THRESHOLD = 10_000_000;  // 건보료 트리거 1,000만
 
+    // 계좌유형·은퇴 (retirement-tax.md)
+    public static final double ISA_EXCESS_RATE = 0.099;              // ISA 비과세 한도 초과분 분리과세
+    public static final double ISA_EXEMPT_GENERAL = 2_000_000;       // ISA 비과세 한도(일반형)
+    public static final double ISA_EXEMPT_LOW_INCOME = 4_000_000;    // ISA 비과세 한도(서민형)
+    public static final double PENSION_CONTRIB_CREDIT_LIMIT = 9_000_000; // 연금 세액공제 한도(연금저축+IRP)
+    public static final double PENSION_CREDIT_RATE_HIGH = 0.165;     // 총급여 5,500만↓ 공제율
+    public static final double PENSION_CREDIT_RATE_STD = 0.132;      // 초과 공제율
+    public static final double PENSION_LOW_RATE_THRESHOLD = 15_000_000; // 사적연금 저율 분리 한도(연)
+
+    /** 사적연금 인출 연금소득세율(나이별, 지방세 포함). 현행 5.5/4.4/3.3. */
+    public static double pensionWithdrawRate(int age) {
+        if (age >= 80) {
+            return 0.033;
+        }
+        if (age >= 70) {
+            return 0.044;
+        }
+        return 0.055;
+    }
+
     /** 분배금 세후(세전 원화 금액 입력). */
     public double netDividend(double gross, TaxClass tc) {
         double rate = (tc == TaxClass.FOREIGN) ? US_DIVIDEND_WITHHOLDING : DIVIDEND_RATE;

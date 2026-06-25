@@ -13,9 +13,11 @@ import java.time.LocalDate;
 public class SimController {
 
     private final DividendSimService sim;
+    private final AccountSimService account;
 
-    public SimController(DividendSimService sim) {
+    public SimController(DividendSimService sim, AccountSimService account) {
         this.sim = sim;
+        this.account = account;
     }
 
     @GetMapping("/dividend")
@@ -28,5 +30,19 @@ public class SimController {
             @RequestParam(defaultValue = "true") boolean reinvest) {
         return sim.run(new DividendSimService.Params(
                 symbol, contribution, amount, LocalDate.parse(start), LocalDate.parse(end), reinvest));
+    }
+
+    /** SIM02: 계좌유형(일반·ISA·연금) N년 세후 비교. */
+    @GetMapping("/account-compare")
+    public AccountSimService.CompareResult accountCompare(
+            @RequestParam(defaultValue = "0") double lumpSum,
+            @RequestParam(defaultValue = "9000000") double annualContribution,
+            @RequestParam(defaultValue = "30") int years,
+            @RequestParam(defaultValue = "0.06") double annualReturn,
+            @RequestParam(defaultValue = "0.02") double dividendYield,
+            @RequestParam(defaultValue = "false") boolean lowIncome,
+            @RequestParam(defaultValue = "65") int withdrawAge) {
+        return account.compare(new AccountSimService.Params(
+                lumpSum, annualContribution, years, annualReturn, dividendYield, lowIncome, withdrawAge));
     }
 }
