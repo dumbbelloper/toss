@@ -1,4 +1,4 @@
-import { Outlet } from '@tanstack/react-router'
+import { Link, Outlet } from '@tanstack/react-router'
 
 import { isUnauthorized, useLogout, useMe } from '../lib/auth'
 
@@ -10,7 +10,24 @@ export function RootLayout() {
     <div className="min-h-full bg-gray-50 text-gray-900">
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <span className="text-lg font-bold text-toss-blue">toss</span>
+          <div className="flex items-center gap-5">
+            <Link to="/" className="text-lg font-bold text-toss-blue">
+              toss
+            </Link>
+            {me.isSuccess && (
+              <nav className="flex items-center gap-4 text-sm text-gray-500">
+                <Link to="/" className="hover:text-gray-900 [&.active]:font-semibold [&.active]:text-gray-900">
+                  홈
+                </Link>
+                <Link
+                  to="/portfolio"
+                  className="hover:text-gray-900 [&.active]:font-semibold [&.active]:text-gray-900"
+                >
+                  자산 관리
+                </Link>
+              </nav>
+            )}
+          </div>
           <nav className="flex items-center gap-3 text-sm">
             {me.isSuccess && (
               <>
