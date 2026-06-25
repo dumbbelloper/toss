@@ -14,7 +14,7 @@ import {
 import { LineChart, type ChartSeries } from '../ui/LineChart'
 
 // 다중 시계열 색 팔레트.
-const PALETTE = ['#3182f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
+const PALETTE = ['#b5703c', '#2f6fed', '#0e7c7b', '#d98b2b', '#8b5cf6', '#ec4899']
 
 export function PortfolioPage() {
   const me = useMe()
@@ -51,7 +51,7 @@ function PriceChart() {
   const { data, isLoading, isError } = useCandles(active.symbol)
 
   const closes = data?.candles.map((c) => c.closePrice) ?? []
-  const series: ChartSeries[] = [{ values: closes, color: '#3182f6', fill: true }]
+  const series: ChartSeries[] = [{ values: closes, color: '#b5703c', fill: true }]
 
   return (
     <div className="space-y-3">
@@ -116,7 +116,7 @@ function LoginPrompt() {
       <button
         type="button"
         onClick={login}
-        className="rounded-lg bg-toss-blue px-5 py-3 font-semibold text-white hover:brightness-95"
+        className="rounded-lg bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-hover"
       >
         Keycloak 으로 로그인
       </button>

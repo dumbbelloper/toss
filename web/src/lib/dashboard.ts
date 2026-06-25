@@ -102,7 +102,7 @@ export function formatPercent(rate: number): string {
  * 0 이면 회색.
  */
 export function signColor(value: number): string {
-  if (value > 0) return 'text-red-600'
-  if (value < 0) return 'text-blue-600'
-  return 'text-gray-500'
+  if (value > 0) return 'text-gain'
+  if (value < 0) return 'text-loss'
+  return 'text-muted'
 }

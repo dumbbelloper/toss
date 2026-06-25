@@ -21,6 +21,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { isUnauthorized, useLogin, useLogout, useMe } from './src/auth/auth';
 import { PortfolioScreen } from './src/screens/PortfolioScreen';
 import { LogoMark } from './src/ui/Logo';
+import { colors } from './src/ui/theme';
 
 const queryClient = new QueryClient();
 
@@ -154,7 +155,7 @@ function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f5f5f7' },
+  root: { flex: 1, backgroundColor: colors.bg },
   screen: { flex: 1 },
   tabBar: {
     flexDirection: 'row',
@@ -165,15 +166,15 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 6 },
   tabText: { fontSize: 13, color: '#9ca3af', fontWeight: '500' },
-  tabTextActive: { color: '#3182f6', fontWeight: '700' },
-  container: { flex: 1, paddingHorizontal: 24, backgroundColor: '#f5f5f7' },
+  tabTextActive: { color: colors.accent, fontWeight: '700' },
+  container: { flex: 1, paddingHorizontal: 24, backgroundColor: colors.bg },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '700' },
   gap: { marginTop: 20 },
   card: {
     marginTop: 24,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     gap: 8,
   },
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
   fieldLabel: { color: '#888', fontSize: 13 },
   fieldValue: { fontSize: 13, fontWeight: '500', flexShrink: 1, textAlign: 'right' },
   button: {
-    backgroundColor: '#1e6fff',
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',

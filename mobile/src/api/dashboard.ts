@@ -5,6 +5,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { ApiError, api } from './client';
+import { colors } from '../ui/theme';
 
 export type CurrencyCode = 'KRW' | 'USD';
 
@@ -93,7 +94,7 @@ export function formatPercent(rate: number): string {
 
 /** 손익 부호별 색 (한국 관습: 수익=빨강, 손실=파랑). RN style 용 hex. */
 export function signColor(value: number): string {
-  if (value > 0) return '#dc2626';
-  if (value < 0) return '#2563eb';
-  return '#6b7280';
+  if (value > 0) return colors.gain;
+  if (value < 0) return colors.loss;
+  return colors.muted;
 }

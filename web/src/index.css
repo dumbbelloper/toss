@@ -1,12 +1,31 @@
 @import "tailwindcss";
 
-/* Tailwind 4: CSS-first 설정. 테마 토큰은 @theme 로 확장한다. */
+/* 곳간 디자인 시스템 — 방향 A(따뜻함). 단일 출처: docs/design/DESIGN.md */
 @theme {
-  --color-toss-blue: #3182f6;
+  --font-sans: "Pretendard", system-ui, -apple-system, sans-serif;
+
+  --color-bg: #faf7f1; /* 페이지 배경 (웜 크림) */
+  --color-surface: #ffffff; /* 카드·헤더 */
+  --color-ink: #2a2521; /* 본문 */
+  --color-muted: #8a8175; /* 보조·라벨 */
+  --color-line: #eae4da; /* 경계선(웜) */
+  --color-accent: #b5703c; /* 브랜드(clay) */
+  --color-accent-hover: #9e6033;
+  --color-gain: #e5494d; /* 수익(빨강) */
+  --color-loss: #2f6fed; /* 손실(파랑) */
+
+  /* 호환: 기존 toss-blue 참조가 남아도 깨지지 않게 accent 로 별칭 */
+  --color-toss-blue: #b5703c;
 }
 
 html,
 body,
 #root {
   height: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }
