@@ -12,6 +12,8 @@ export const STRATEGIES: { value: Strategy; label: string }[] = [
   { value: 'RSI', label: 'RSI' },
 ];
 
+export type Currency = 'USD' | 'KRW';
+
 export interface BacktestParams {
   symbol: string;
   strategy: Strategy;
@@ -22,6 +24,26 @@ export interface BacktestParams {
   rsiSellAbove: number;
   count: number;
   capital: number;
+  reinvest: boolean;
+  currency: Currency;
+}
+
+export interface UniverseItem {
+  symbol: string;
+  name: string;
+  category: string;
+  bars: number;
+  from_date: string | null;
+  to_date: string | null;
+}
+
+export function useUniverse() {
+  return useQuery({
+    queryKey: ['history', 'universe'],
+    queryFn: () => api<UniverseItem[]>('/api/history/universe'),
+    staleTime: 300_000,
+    retry: (count, err) => !(err instanceof ApiError && err.status === 401) && count < 1,
+  });
 }
 
 export interface BacktestResult {
@@ -56,6 +78,8 @@ export function useBacktest(params: BacktestParams | null) {
         rsiSellAbove: String(p.rsiSellAbove),
         count: String(p.count),
         capital: String(p.capital),
+        reinvest: String(p.reinvest),
+        currency: p.currency,
       });
       return api<BacktestResult>(`/api/backtest?${q.toString()}`);
     },
