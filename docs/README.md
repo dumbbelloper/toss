@@ -13,6 +13,7 @@
 | 엔지니어링 | [`engineering/`](engineering) | [mobile](engineering/mobile.md) · [backend](engineering/backend.md) · [web](engineering/web.md) |
 | API | [`api/`](api) | 토스 Open API 명세(단일 출처) |
 | 운영 | [`runbook.md`](runbook.md) | 배포·장애 대응 |
+| 이슈 | [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) | 추적 중인 결함(예: KI-1 로그아웃 UI) |
 | 결정 | [`adr/`](adr) | 아키텍처 결정 기록 |
 
 ## 작성 원칙
