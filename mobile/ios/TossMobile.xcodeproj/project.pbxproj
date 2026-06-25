@@ -277,6 +277,7 @@
 				PRODUCT_NAME = TossMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				CODE_SIGN_ENTITLEMENTS = TossMobile/TossMobile.entitlements;
 				SWIFT_OBJC_BRIDGING_HEADER = "TossMobile/TossMobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -306,6 +307,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = TossMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_ENTITLEMENTS = TossMobile/TossMobile.entitlements;
 				SWIFT_OBJC_BRIDGING_HEADER = "TossMobile/TossMobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
