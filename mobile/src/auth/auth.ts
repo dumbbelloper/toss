@@ -34,13 +34,17 @@ export function useLogin() {
   });
 }
 
-/** 로그아웃: 로컬 토큰 정리 + best-effort revoke 후 me 캐시 제거. */
+/**
+ * 로그아웃: 로컬 토큰 정리(+백그라운드 revoke) 후 me 쿼리를 **reset**.
+ * removeQueries 는 마운트된 useMe 옵저버를 즉시 리렌더하지 못해 화면이 멈춰 보였다 →
+ * resetQueries 로 초기상태+refetch 를 강제해 곧바로 미인증(랜딩) 으로 전환한다.
+ */
 export function useLogout() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: signOut,
     onSuccess: () => {
-      qc.removeQueries({ queryKey: ['me'] });
+      qc.resetQueries({ queryKey: ['me'] });
     },
   });
 }

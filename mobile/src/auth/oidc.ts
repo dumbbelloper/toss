@@ -4,7 +4,6 @@
 
 import {
   authorize,
-  logout,
   refresh,
   revoke,
   type AuthConfiguration,
@@ -58,7 +57,14 @@ function isUserCancellation(err: unknown): boolean {
  */
 export async function signInWithKeycloak(): Promise<SavedSession | null> {
   try {
-    const result = await authorize(config);
+    // ephemeral 세션: 시스템 브라우저에 Keycloak SSO 쿠키를 남기지 않는다 → 로그아웃 후
+    // 재로그인 시 항상 자격증명을 요구(silent SSO 차단, KI-1). 덕분에 로그아웃은 로컬 토큰만
+    // 정리하면 되므로 end-session 브라우저 시트를 띄울 필요가 없다(깔끔한 UX).
+    const result = await authorize({
+      ...config,
+      iosPrefersEphemeralSession: true,
+      androidPrefersEphemeralSession: true,
+    });
     const session = toSession(result);
     await saveSession(session);
     return session;
@@ -103,30 +109,15 @@ export async function getFreshAccessToken(): Promise<string | null> {
 }
 
 /**
- * 로그아웃을 결정적·완전하게 처리한다.
- * 1) 로컬 토큰(Keychain) 제거 → 화면 즉시 로그아웃 전환.
- * 2) refresh token best-effort revoke.
- * 3) Keycloak end-session(RP-initiated): 시스템 브라우저로 SSO 세션 쿠키까지 종료한다.
- *    안 하면 재로그인이 silent SSO 로 같은 계정 자동 로그인됨(KI-1).
+ * 로그아웃 — 즉시·깔끔하게. 로컬 토큰(Keychain) 제거 → 화면이 바로 로그아웃 전환.
+ * refresh token 은 best-effort 로 revoke. (로그인이 ephemeral 세션이라 브라우저에 SSO 쿠키가
+ * 없으므로, 재로그인은 어차피 비번을 요구한다 → end-session 브라우저 시트 불필요.)
  */
 export async function signOut(): Promise<void> {
   const session = await loadSession();
-  await clearSession();
+  await clearSession(); // 토큰 제거(핵심·빠름) → 즉시 로그아웃 상태. 화면 전환을 막지 않는다.
   if (session?.refreshToken) {
-    try {
-      await revoke(config, { tokenToRevoke: session.refreshToken, sendClientId: true });
-    } catch {
-      // revoke 실패는 무시 — 로컬 토큰은 이미 제거됨.
-    }
-  }
-  if (session?.idToken) {
-    try {
-      await logout(config, {
-        idToken: session.idToken,
-        postLogoutRedirectUrl: OIDC.redirectUrl,
-      });
-    } catch {
-      // 사용자가 브라우저 시트를 닫는 등 — 로컬 토큰은 이미 제거됨(로그아웃은 유효).
-    }
+    // revoke 는 백그라운드 best-effort — 네트워크가 느려도 UI 를 멈추지 않게 await 하지 않는다.
+    revoke(config, { tokenToRevoke: session.refreshToken, sendClientId: true }).catch(() => {});
   }
 }
