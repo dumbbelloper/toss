@@ -1,7 +1,12 @@
 package com.toss.security;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.Authentication;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -118,11 +123,35 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** RP-initiated logout: 백엔드 세션 종료 후 Keycloak 세션까지 종료하고 SPA 로 복귀. */
+    /**
+     * RP-initiated logout. 백엔드 세션을 종료한 뒤, Keycloak end-session URL(id_token_hint 포함)을
+     * 302 대신 <b>JSON 본문</b>으로 돌려준다. SPA(fetch)가 CSRF 헤더로 호출하고(redirect 불가),
+     * 받은 URL 로 브라우저를 네비게이트해 <b>Keycloak SSO 세션까지</b> 종료한다(이후 SPA 로 복귀).
+     * 302 를 fetch 가 따라가지 못해 SSO 가 남던 KI-1 을 해결.
+     */
     private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrations) {
-        OidcClientInitiatedLogoutSuccessHandler handler =
-                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrations);
+        JsonEndSessionLogoutSuccessHandler handler =
+                new JsonEndSessionLogoutSuccessHandler(clientRegistrations);
         handler.setPostLogoutRedirectUri("http://localhost:5173/");
         return handler;
+    }
+
+    /** end-session URL 을 리다이렉트하지 않고 {@code {"logoutUrl": "..."}} 로 반환한다. */
+    private static final class JsonEndSessionLogoutSuccessHandler
+            extends OidcClientInitiatedLogoutSuccessHandler {
+
+        JsonEndSessionLogoutSuccessHandler(ClientRegistrationRepository repo) {
+            super(repo);
+        }
+
+        @Override
+        public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response,
+                                    Authentication authentication) throws IOException {
+            String target = determineTargetUrl(request, response, authentication);
+            String json = "{\"logoutUrl\":\"" + target.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
+            response.setStatus(HttpStatus.OK.value());
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(json);
+        }
     }
 }
