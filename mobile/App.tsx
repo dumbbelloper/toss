@@ -20,6 +20,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 
 import { isUnauthorized, useLogin, useLogout, useMe } from './src/auth/auth';
 import { PortfolioScreen } from './src/screens/PortfolioScreen';
+import { LogoMark } from './src/ui/Logo';
 
 const queryClient = new QueryClient();
 
@@ -66,7 +67,10 @@ function AuthScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
-      <Text style={styles.title}>Toss Mobile</Text>
+      <View style={styles.brand}>
+        <LogoMark size={26} />
+        <Text style={styles.title}>곳간</Text>
+      </View>
 
       {me.isLoading && <ActivityIndicator style={styles.gap} />}
 
@@ -163,7 +167,8 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, color: '#9ca3af', fontWeight: '500' },
   tabTextActive: { color: '#3182f6', fontWeight: '700' },
   container: { flex: 1, paddingHorizontal: 24, backgroundColor: '#f5f5f7' },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  title: { fontSize: 28, fontWeight: '700' },
   gap: { marginTop: 20 },
   card: {
     marginTop: 24,
