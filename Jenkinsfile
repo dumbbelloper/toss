@@ -1,4 +1,5 @@
 // gotgan CI — backend·web 이미지 빌드(Kaniko) → Harbor → gotgan-gitops 태그 갱신 → Argo CD 동기화
+// 주의: kaniko는 빌드 중 컨테이너 rootfs를 덮어쓰므로 이미지당 별도 kaniko 컨테이너를 쓴다.
 pipeline {
   agent {
     kubernetes {
@@ -7,13 +8,23 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
-  - name: kaniko
+  - name: kaniko-backend
     image: gcr.io/kaniko-project/executor:debug
     command: ["/busybox/cat"]
     tty: true
     resources:
       requests: { cpu: "500m", memory: "1Gi" }
       limits:   { cpu: "2",    memory: "3Gi" }
+    volumeMounts:
+    - name: harbor-docker
+      mountPath: /kaniko/.docker
+  - name: kaniko-web
+    image: gcr.io/kaniko-project/executor:debug
+    command: ["/busybox/cat"]
+    tty: true
+    resources:
+      requests: { cpu: "250m", memory: "512Mi" }
+      limits:   { cpu: "2",    memory: "2Gi" }
     volumeMounts:
     - name: harbor-docker
       mountPath: /kaniko/.docker
@@ -43,7 +54,7 @@ spec:
     }
     stage('Build backend') {
       steps {
-        container('kaniko') {
+        container('kaniko-backend') {
           sh '''/kaniko/executor \
             --context=dir://$WORKSPACE/backend \
             --dockerfile=Dockerfile \
@@ -54,7 +65,7 @@ spec:
     }
     stage('Build web') {
       steps {
-        container('kaniko') {
+        container('kaniko-web') {
           sh '''/kaniko/executor \
             --context=dir://$WORKSPACE/web \
             --dockerfile=Dockerfile \
