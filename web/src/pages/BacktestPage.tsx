@@ -228,6 +228,7 @@ function Results({
         <LineChart
           series={series}
           baseline={data.initialCapital}
+          xLabels={data.equity.map((e) => e.time)}
           formatY={(v) =>
             currency === 'KRW'
               ? Math.round(v / 10000).toLocaleString('ko-KR') + '만'
