@@ -7,6 +7,11 @@
 - 인증 코드(PKCE + Bearer) 완료. **Android · iOS 로그인 E2E 모두 검증 완료(2026-06-25).**
 - iOS: iPhone 17 시뮬레이터(iOS 26, Xcode 26.5)에서 로그인 → `/api/me` 200
   (tester/Test User/tester@toss.local/roles=USER) 확인.
+- **자산관리 화면 + 시세 차트(react-native-svg) — iOS·Android 모두 실데이터 렌더 검증(2026-06-25).**
+  iOS·Android UI 동일(같은 RN 코드 + 공유 d3 수학, `src/ui/LineChart.tsx`).
+- **로그인 취소 처리:** ASWebAuthenticationSession/Custom Tab 에서 사용자가 취소하면
+  app-auth 가 `authentication_failed`("operation couldn't be completed")로 throw 하는데,
+  `oidc.ts` 가 메시지로 취소를 감지해 에러 대신 `null` 반환(화면에 실패 메시지 미표시).
 
 ## iOS 사전 준비 (검증 완료 2026-06-25)
 1. **xcode-select 전환** (Xcode.app 설치 후 1회, sudo):
