@@ -58,9 +58,37 @@ public class PriceDailyDao {
         return jdbc.batchUpdate(UPSERT_FX, batch).length;
     }
 
+    private static final String UPSERT_DIV = """
+            insert into dividend_daily (symbol, ex_date, amount, currency, source)
+            values (:symbol, :exDate, :amount, :currency, :source)
+            on conflict (symbol, ex_date) do update set
+                amount = excluded.amount, currency = excluded.currency, source = excluded.source
+            """;
+
+    public int upsertDividends(String symbol, String currency, String source, List<DividendRow> divs) {
+        if (divs.isEmpty()) {
+            return 0;
+        }
+        SqlParameterSource[] batch = divs.stream().map(d -> new MapSqlParameterSource()
+                .addValue("symbol", symbol).addValue("exDate", d.exDate())
+                .addValue("amount", d.amount()).addValue("currency", currency)
+                .addValue("source", source)).toArray(SqlParameterSource[]::new);
+        return jdbc.batchUpdate(UPSERT_DIV, batch).length;
+    }
+
     public List<String> enabledUniverse() {
         return jdbc.getJdbcTemplate().queryForList(
                 "select symbol from symbol_universe where enabled = true order by symbol", String.class);
+    }
+
+    /** 백필용: 심볼 + 마켓 + 통화(상장 통화). */
+    public record UniverseSymbol(String symbol, String market, String currency) {
+    }
+
+    public List<UniverseSymbol> enabledUniverseDetailed() {
+        return jdbc.getJdbcTemplate().query(
+                "select symbol, market, currency from symbol_universe where enabled = true order by symbol",
+                (rs, i) -> new UniverseSymbol(rs.getString("symbol"), rs.getString("market"), rs.getString("currency")));
     }
 
     /** 백테스트용: 최근 count 봉(과거→현재 정렬). */

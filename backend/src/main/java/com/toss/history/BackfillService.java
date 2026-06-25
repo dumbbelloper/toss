@@ -22,20 +22,22 @@ public class BackfillService {
 
     /** 유니버스 전체 백필 + USDKRW. 성공 적재 심볼 수 반환. */
     public int backfillUniverse() {
-        List<String> symbols = dao.enabledUniverse();
+        List<PriceDailyDao.UniverseSymbol> symbols = dao.enabledUniverseDetailed();
         int ok = 0;
-        for (String symbol : symbols) {
+        for (PriceDailyDao.UniverseSymbol u : symbols) {
             try {
-                List<DailyBar> bars = provider.dailyHistory(symbol);
+                List<DailyBar> bars = provider.dailyHistory(u.symbol());
                 if (bars.isEmpty()) {
-                    log.warn("백필 빈 응답: {}", symbol);
+                    log.warn("백필 빈 응답: {}", u.symbol());
                     continue;
                 }
-                int n = dao.upsertPrices(symbol, "US", "yahoo", bars);
-                log.info("백필 {}: {}봉 ({} ~ {})", symbol, n, bars.getFirst().date(), bars.getLast().date());
+                int n = dao.upsertPrices(u.symbol(), u.market(), "yahoo", bars);
+                int dn = dao.upsertDividends(u.symbol(), u.currency(), "yahoo", provider.dividendHistory(u.symbol()));
+                log.info("백필 {}: {}봉 {}배당 ({} ~ {})",
+                        u.symbol(), n, dn, bars.getFirst().date(), bars.getLast().date());
                 ok++;
             } catch (Exception e) {
-                log.warn("백필 실패 {}: {}", symbol, e.toString());
+                log.warn("백필 실패 {}: {}", u.symbol(), e.toString());
             }
         }
         backfillFx();
