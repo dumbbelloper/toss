@@ -19,6 +19,7 @@ import {
   type Strategy,
 } from '../api/backtest';
 import { formatMoney, formatPercent, signColor } from '../api/dashboard';
+import { symbolLabel } from '../api/symbol';
 import { LineChart, type ChartSeries } from '../ui/LineChart';
 import { colors } from '../ui/theme';
 
@@ -65,7 +66,7 @@ export function BacktestScreen() {
         <Label>종목</Label>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {symbols.map(s => (
-            <Chip key={s.symbol} label={s.symbol} on={form.symbol === s.symbol} onPress={() => set('symbol', s.symbol)} />
+            <Chip key={s.symbol} label={symbolLabel(s.symbol, s.name)} on={form.symbol === s.symbol} onPress={() => set('symbol', s.symbol)} />
           ))}
         </ScrollView>
 
@@ -123,7 +124,13 @@ export function BacktestScreen() {
       </View>
 
       {isError && <Text style={styles.err}>실행 실패: {(error as Error).message}</Text>}
-      {data && submitted && <Results data={data} currency={submitted.currency} />}
+      {data && submitted && (
+        <Results
+          data={data}
+          currency={submitted.currency}
+          symbolName={symbols.find(s => s.symbol === data.symbol)?.name}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -131,9 +138,11 @@ export function BacktestScreen() {
 function Results({
   data,
   currency,
+  symbolName,
 }: {
   data: import('../api/backtest').BacktestResult;
   currency: Currency;
+  symbolName?: string;
 }) {
   const [w, setW] = useState(0);
   const series: ChartSeries[] = [{ values: data.equity.map(e => e.value), color: colors.accent, fill: true }];
@@ -167,7 +176,7 @@ function Results({
               : '$' + Math.round(v).toLocaleString('en-US')
           }
         />
-        <Text style={styles.cap}>{data.symbol} · {data.params} · {data.bars}봉</Text>
+        <Text style={styles.cap}>{symbolLabel(data.symbol, symbolName)} · {data.params} · {data.bars}봉</Text>
       </View>
     </View>
   );
