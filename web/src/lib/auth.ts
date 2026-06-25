@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { ApiError, api, readCookie } from './api'
 
@@ -42,19 +42,20 @@ export function login(): void {
  * 응답하므로(cross-origin) redirect: 'manual' 로 받아 넘기고, 로컬 상태만 정리한다.
  */
 export function useLogout() {
-  const qc = useQueryClient()
   return useMutation({
     mutationFn: async () => {
       const xsrf = readCookie('XSRF-TOKEN')
+      // 백엔드 세션을 무효화한다(헤더 CSRF). 백엔드는 Keycloak end-session 으로 302(cross-origin)를
+      // 응답하므로 redirect:'manual' 로 받아 넘긴다.
       await fetch('/logout', {
         method: 'POST',
         credentials: 'include',
         redirect: 'manual',
         headers: xsrf ? { 'X-XSRF-TOKEN': xsrf } : undefined,
       })
-    },
-    onSuccess: () => {
-      qc.removeQueries({ queryKey: ['me'] })
+      // 캐시·관찰자 잔존(=로그아웃 후 정보 노출)을 원천 차단: 전체 새로고침 → useMe 가 401 을
+      // 받아 로그인 화면으로 전환된다. (KI-1 의 web 부분)
+      window.location.assign('/')
     },
   })
 }
