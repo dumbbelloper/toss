@@ -112,7 +112,12 @@ function PriceSection() {
         ) : isError || closes.length < 2 ? (
           <Text style={styles.empty}>시세를 불러올 수 없습니다.</Text>
         ) : (
-          <LineChart series={series} width={width} formatY={v => Math.round(v).toLocaleString('ko-KR')} />
+          <LineChart
+            series={series}
+            width={width}
+            xLabels={data?.candles.map(c => c.timestamp) ?? []}
+            formatY={v => Math.round(v).toLocaleString('ko-KR')}
+          />
         )}
       </View>
     </View>

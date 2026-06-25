@@ -18,12 +18,24 @@ interface LineChartProps {
   baseline?: number
   /** y 축/마지막 값 포맷. */
   formatY?: (v: number) => string
+  /** 각 데이터 포인트의 x 라벨(날짜 'YYYY-MM-DD'). 일부만 x축 틱으로 표시. */
+  xLabels?: string[]
+  /** x 틱 라벨 포맷(미지정 시 다년이면 연도, 아니면 YYYY-MM). */
+  formatX?: (label: string) => string
 }
 
 const VIEW_W = 640
-const PAD = { top: 14, right: 64, bottom: 22, left: 10 }
+const PAD = { top: 14, right: 64, bottom: 30, left: 10 }
+const X_TICKS = 5
 
-export function LineChart({ series, height = 220, baseline, formatY = (v) => v.toFixed(0) }: LineChartProps) {
+export function LineChart({
+  series,
+  height = 220,
+  baseline,
+  formatY = (v) => v.toFixed(0),
+  xLabels,
+  formatX,
+}: LineChartProps) {
   const usable = series.filter((s) => s.values.length > 0)
   if (!usable.length) return null
 
@@ -53,8 +65,24 @@ export function LineChart({ series, height = 220, baseline, formatY = (v) => v.t
     .y1((d) => y(d))
     .curve(curveMonotoneX)
 
+  // x축 틱(날짜)
+  const labels = xLabels ?? []
+  const multiYear = labels.length > 1 && labels[0].slice(0, 4) !== labels[labels.length - 1].slice(0, 4)
+  const fmtX = formatX ?? ((s: string) => (multiYear ? s.slice(0, 4) : s.slice(0, 7)))
+  const ticks =
+    labels.length > 1
+      ? Array.from({ length: X_TICKS }, (_, i) => {
+          const idx = Math.round((i / (X_TICKS - 1)) * (labels.length - 1))
+          return { idx, label: fmtX(labels[idx]) }
+        })
+      : []
+  const axisY = height - PAD.bottom
+
   return (
     <svg viewBox={`0 0 ${VIEW_W} ${height}`} className="w-full" role="img" aria-label="라인 차트">
+      {/* x축 선 */}
+      <line x1={PAD.left} x2={VIEW_W - PAD.right} y1={axisY} y2={axisY} stroke="#eae4da" strokeWidth={1} />
+
       {/* 기준선 */}
       {baseline != null && (
         <g>
@@ -80,6 +108,21 @@ export function LineChart({ series, height = 220, baseline, formatY = (v) => v.t
       <text x={VIEW_W - PAD.right + 6} y={y(min) + 4} className="fill-gray-300 text-[11px]">
         {formatY(min)}
       </text>
+
+      {/* x축 날짜 틱 */}
+      {ticks.map((t, i) => (
+        <g key={i}>
+          <line x1={x(t.idx)} x2={x(t.idx)} y1={axisY} y2={axisY + 4} stroke="#d6cfc2" strokeWidth={1} />
+          <text
+            x={x(t.idx)}
+            y={axisY + 16}
+            textAnchor={i === 0 ? 'start' : i === ticks.length - 1 ? 'end' : 'middle'}
+            className="fill-gray-400 text-[11px]"
+          >
+            {t.label}
+          </text>
+        </g>
+      ))}
 
       {usable.map((s, si) => {
         const last = s.values[s.values.length - 1]

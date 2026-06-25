@@ -77,7 +77,11 @@ function PriceChart() {
         ) : isError || closes.length < 2 ? (
           <p className="py-12 text-center text-sm text-gray-400">시세를 불러올 수 없습니다.</p>
         ) : (
-          <LineChart series={series} formatY={(v) => Math.round(v).toLocaleString('ko-KR')} />
+          <LineChart
+            series={series}
+            xLabels={data?.candles.map((c) => c.timestamp) ?? []}
+            formatY={(v) => Math.round(v).toLocaleString('ko-KR')}
+          />
         )}
       </div>
     </div>
@@ -98,12 +102,13 @@ function PerformanceChart() {
       label: s.name || s.symbol,
     }))
   if (!series.length) return null
+  const xLabels = data.find((s) => s.points.length > 1)?.points.map((p) => p.time) ?? []
 
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-semibold">매수가 대비 성과</h2>
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <LineChart series={series} baseline={100} formatY={(v) => v.toFixed(0)} />
+        <LineChart series={series} baseline={100} xLabels={xLabels} formatY={(v) => v.toFixed(0)} />
       </div>
     </div>
   )

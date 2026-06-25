@@ -19,9 +19,13 @@ interface LineChartProps {
   height?: number;
   baseline?: number;
   formatY?: (v: number) => string;
+  /** 각 데이터 포인트의 x 라벨(날짜 'YYYY-MM-DD'). 일부만 x축 틱으로. */
+  xLabels?: string[];
+  formatX?: (label: string) => string;
 }
 
-const PAD = { top: 14, right: 64, bottom: 22, left: 10 };
+const PAD = { top: 14, right: 64, bottom: 30, left: 10 };
+const X_TICKS = 5;
 
 export function LineChart({
   series,
@@ -29,6 +33,8 @@ export function LineChart({
   height = 220,
   baseline,
   formatY = v => v.toFixed(0),
+  xLabels,
+  formatX,
 }: LineChartProps) {
   const usable = series.filter(s => s.values.length > 0);
   if (!usable.length || width <= 0) {
@@ -63,8 +69,23 @@ export function LineChart({
     .y1(d => y(d))
     .curve(curveMonotoneX);
 
+  const labels = xLabels ?? [];
+  const multiYear = labels.length > 1 && labels[0].slice(0, 4) !== labels[labels.length - 1].slice(0, 4);
+  const fmtX = formatX ?? ((s: string) => (multiYear ? s.slice(0, 4) : s.slice(0, 7)));
+  const ticks =
+    labels.length > 1
+      ? Array.from({ length: X_TICKS }, (_, i) => {
+          const idx = Math.round((i / (X_TICKS - 1)) * (labels.length - 1));
+          return { idx, label: fmtX(labels[idx]) };
+        })
+      : [];
+  const axisY = height - PAD.bottom;
+
   return (
     <Svg width={width} height={height}>
+      {/* x축 선 */}
+      <Line x1={PAD.left} x2={width - PAD.right} y1={axisY} y2={axisY} stroke="#eae4da" strokeWidth={1} />
+
       {baseline != null && (
         <>
           <Line
@@ -88,6 +109,20 @@ export function LineChart({
       <SvgText x={width - PAD.right + 6} y={y(min) + 4} fill="#d1d5db" fontSize={11}>
         {formatY(min)}
       </SvgText>
+
+      {ticks.map((t, i) => (
+        <Svg key={`t${i}`}>
+          <Line x1={x(t.idx)} x2={x(t.idx)} y1={axisY} y2={axisY + 4} stroke="#d6cfc2" strokeWidth={1} />
+          <SvgText
+            x={x(t.idx)}
+            y={axisY + 16}
+            fill="#9ca3af"
+            fontSize={11}
+            textAnchor={i === 0 ? 'start' : i === ticks.length - 1 ? 'end' : 'middle'}>
+            {t.label}
+          </SvgText>
+        </Svg>
+      ))}
 
       {usable.map((s, si) => {
         const last = s.values[s.values.length - 1];
