@@ -1,5 +1,6 @@
 import { scaleLinear } from 'd3-scale'
 import { area as d3area, curveMonotoneX, line as d3line } from 'd3-shape'
+import { useRef, useState } from 'react'
 
 // d3-scale/d3-shape 로 좌표·path 만 계산하고 순수 SVG 로 렌더한다.
 // 이 수학 레이어는 react-native-svg 에서도 동일하게 재사용 가능(통일 UI 목표).
@@ -18,7 +19,7 @@ interface LineChartProps {
   baseline?: number
   /** y 축/마지막 값 포맷. */
   formatY?: (v: number) => string
-  /** 각 데이터 포인트의 x 라벨(날짜 'YYYY-MM-DD'). 일부만 x축 틱으로 표시. */
+  /** 각 데이터 포인트의 x 라벨(날짜 'YYYY-MM-DD'). x축 틱·호버 툴팁에 사용. */
   xLabels?: string[]
   /** x 틱 라벨 포맷(미지정 시 다년이면 연도, 아니면 YYYY-MM). */
   formatX?: (label: string) => string
@@ -36,8 +37,10 @@ export function LineChart({
   xLabels,
   formatX,
 }: LineChartProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [hover, setHover] = useState<number | null>(null)
+
   const usable = series.filter((s) => s.values.length > 0)
-  if (!usable.length) return null
 
   const all = usable.flatMap((s) => s.values)
   if (baseline != null) all.push(baseline)
@@ -55,6 +58,9 @@ export function LineChart({
   const x = scaleLinear([0, xMax], [PAD.left, VIEW_W - PAD.right])
   const y = scaleLinear([min, max], [height - PAD.bottom, PAD.top])
 
+  // hooks 호출 후에 early-return (hooks 규칙 준수)
+  if (!usable.length) return null
+
   const lineGen = d3line<number>()
     .x((_, i) => x(i))
     .y((d) => y(d))
@@ -65,7 +71,6 @@ export function LineChart({
     .y1((d) => y(d))
     .curve(curveMonotoneX)
 
-  // x축 틱(날짜)
   const labels = xLabels ?? []
   const multiYear = labels.length > 1 && labels[0].slice(0, 4) !== labels[labels.length - 1].slice(0, 4)
   const fmtX = formatX ?? ((s: string) => (multiYear ? s.slice(0, 4) : s.slice(0, 7)))
@@ -78,12 +83,39 @@ export function LineChart({
       : []
   const axisY = height - PAD.bottom
 
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const vbX = ((e.clientX - rect.left) / rect.width) * VIEW_W
+    setHover(Math.max(0, Math.min(xMax, Math.round(x.invert(vbX)))))
+  }
+
+  // 툴팁 박스
+  const hoverItems =
+    hover != null
+      ? usable
+          .filter((s) => hover < s.values.length)
+          .map((s) => ({ color: s.color, label: s.label, value: formatY(s.values[hover]) }))
+      : []
+  const boxW = 128
+  const boxH = 10 + 14 + hoverItems.length * 15
+  let tx = hover != null ? x(hover) + 10 : 0
+  if (tx + boxW > VIEW_W) tx = (hover != null ? x(hover) : 0) - boxW - 10
+  if (tx < 0) tx = 4
+
   return (
-    <svg viewBox={`0 0 ${VIEW_W} ${height}`} className="w-full" role="img" aria-label="라인 차트">
-      {/* x축 선 */}
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${VIEW_W} ${height}`}
+      className="w-full"
+      role="img"
+      aria-label="라인 차트"
+      onMouseMove={onMove}
+      onMouseLeave={() => setHover(null)}
+    >
       <line x1={PAD.left} x2={VIEW_W - PAD.right} y1={axisY} y2={axisY} stroke="#eae4da" strokeWidth={1} />
 
-      {/* 기준선 */}
       {baseline != null && (
         <g>
           <line
@@ -101,7 +133,6 @@ export function LineChart({
         </g>
       )}
 
-      {/* y 범위 라벨 */}
       <text x={VIEW_W - PAD.right + 6} y={y(max) + 4} className="fill-gray-300 text-[11px]">
         {formatY(max)}
       </text>
@@ -109,7 +140,6 @@ export function LineChart({
         {formatY(min)}
       </text>
 
-      {/* x축 날짜 틱 */}
       {ticks.map((t, i) => (
         <g key={i}>
           <line x1={x(t.idx)} x2={x(t.idx)} y1={axisY} y2={axisY + 4} stroke="#d6cfc2" strokeWidth={1} />
@@ -145,6 +175,53 @@ export function LineChart({
           </g>
         )
       })}
+
+      {/* 호버 크로스헤어 + 툴팁 */}
+      {hover != null && (
+        <g pointerEvents="none">
+          <line
+            x1={x(hover)}
+            x2={x(hover)}
+            y1={PAD.top}
+            y2={axisY}
+            stroke="#b5703c"
+            strokeWidth={1}
+            strokeDasharray="3 3"
+            opacity={0.5}
+          />
+          {usable.map((s, si) =>
+            hover < s.values.length ? (
+              <circle
+                key={si}
+                cx={x(hover)}
+                cy={y(s.values[hover])}
+                r={3.5}
+                fill={s.color}
+                stroke="#fff"
+                strokeWidth={1}
+              />
+            ) : null,
+          )}
+          <g>
+            <rect x={tx} y={PAD.top} width={boxW} height={boxH} rx={6} fill="#fff" stroke="#eae4da" />
+            <text x={tx + 8} y={PAD.top + 15} className="fill-gray-500 text-[10px]">
+              {labels[hover] ?? `#${hover}`}
+            </text>
+            {hoverItems.map((it, i) => (
+              <text
+                key={i}
+                x={tx + 8}
+                y={PAD.top + 15 + (i + 1) * 15}
+                className="text-[11px] font-semibold"
+                fill={it.color}
+              >
+                {it.label ? `${it.label} ` : ''}
+                {it.value}
+              </text>
+            ))}
+          </g>
+        </g>
+      )}
     </svg>
   )
 }
