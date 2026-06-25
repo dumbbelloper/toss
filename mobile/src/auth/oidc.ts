@@ -4,6 +4,7 @@
 
 import {
   authorize,
+  logout,
   refresh,
   revoke,
   type AuthConfiguration,
@@ -101,7 +102,13 @@ export async function getFreshAccessToken(): Promise<string | null> {
   }
 }
 
-/** 로컬 세션을 비우고, refresh token 을 best-effort 로 revoke 한다. */
+/**
+ * 로그아웃을 결정적·완전하게 처리한다.
+ * 1) 로컬 토큰(Keychain) 제거 → 화면 즉시 로그아웃 전환.
+ * 2) refresh token best-effort revoke.
+ * 3) Keycloak end-session(RP-initiated): 시스템 브라우저로 SSO 세션 쿠키까지 종료한다.
+ *    안 하면 재로그인이 silent SSO 로 같은 계정 자동 로그인됨(KI-1).
+ */
 export async function signOut(): Promise<void> {
   const session = await loadSession();
   await clearSession();
@@ -110,6 +117,16 @@ export async function signOut(): Promise<void> {
       await revoke(config, { tokenToRevoke: session.refreshToken, sendClientId: true });
     } catch {
       // revoke 실패는 무시 — 로컬 토큰은 이미 제거됨.
+    }
+  }
+  if (session?.idToken) {
+    try {
+      await logout(config, {
+        idToken: session.idToken,
+        postLogoutRedirectUrl: OIDC.redirectUrl,
+      });
+    } catch {
+      // 사용자가 브라우저 시트를 닫는 등 — 로컬 토큰은 이미 제거됨(로그아웃은 유효).
     }
   }
 }
