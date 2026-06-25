@@ -1,16 +1,24 @@
 package com.toss.security;
 
+import java.util.Collection;
+import java.util.HashSet;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -32,6 +40,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // @PreAuthorize/@PostAuthorize 활성화 (역할 게이트가 필요할 때 메서드에 직접 적용)
 public class SecurityConfig {
 
     /** Bearer 토큰을 가진 요청만 이 체인이 처리한다(@Order(1) 로 우선). */
@@ -44,13 +53,42 @@ public class SecurityConfig {
         };
         http
             .securityMatcher(hasBearer)
+            // 현재 정책: /api/** 는 인증된 사용자 전체 허용(1인 앱). realm 역할은 authority 로
+            // 매핑되므로(jwtAuthenticationConverter) 추후 .hasRole(...)/@PreAuthorize 로 게이트 가능.
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
+                .jwtAuthenticationConverter(jwtAuthenticationConverter())))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
         return http.build();
+    }
+
+    /** 모바일 Bearer(access token)의 scope(SCOPE_*) + Keycloak realm 역할(ROLE_*)을 함께 authority 로. */
+    private JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter scopes = new JwtGrantedAuthoritiesConverter(); // SCOPE_*
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            Collection<GrantedAuthority> authorities = new HashSet<>(scopes.convert(jwt));
+            authorities.addAll(KeycloakRoleConverter.realmRoleAuthorities(jwt.getClaims()));
+            return authorities;
+        });
+        return converter;
+    }
+
+    /** 웹 BFF(OIDC 세션)의 principal 에도 realm 역할(ROLE_*)을 부여 — OIDC_USER/SCOPE_* 는 유지. */
+    @Bean
+    GrantedAuthoritiesMapper userAuthoritiesMapper() {
+        return authorities -> {
+            Collection<GrantedAuthority> mapped = new HashSet<>(authorities);
+            authorities.forEach(authority -> {
+                if (authority instanceof OidcUserAuthority oidc) {
+                    mapped.addAll(KeycloakRoleConverter.realmRoleAuthorities(oidc.getIdToken().getClaims()));
+                }
+            });
+            return mapped;
+        };
     }
 
     /**

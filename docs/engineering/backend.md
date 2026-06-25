@@ -8,8 +8,12 @@
 - Toss 연동: 백엔드만 `client_secret` 보유(machine-to-machine). 스펙은 [`docs/api/`](../api).
 - 데이터: Postgres + Spring Data JDBC.
 
+## 인가(authz)
+- Keycloak realm 역할 → Spring `ROLE_*` authority 매핑(`KeycloakRoleConverter`), 모바일(JWT converter)·
+  웹(GrantedAuthoritiesMapper) 양쪽. `@EnableMethodSecurity` 활성. 정책·근거: `docs/adr/0002-authorization-policy.md`.
+- 현재 정책: `/api/** = 인증된 사용자 전체 허용`(1인 앱). ADMIN 은 향후 운영 기능용 예약.
+
 ## 다가오는 작업 (PRODUCT 기둥)
-- 인가(authz/roles) 3-플랫폼 정합성 점검.
 - Toss API 20개 엔드포인트 연동(@HttpExchange + RestClient) — `docs/api/`.
 - 백테스트 데이터 적재 잡 + `price_daily`/`macro_series` — `docs/data/sources.md`.
 
