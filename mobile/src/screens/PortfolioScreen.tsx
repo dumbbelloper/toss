@@ -22,6 +22,7 @@ import {
   type HoldingsItem,
 } from '../api/dashboard';
 import { LineChart, type ChartSeries } from '../ui/LineChart';
+import { colors } from '../ui/theme';
 
 export function PortfolioScreen() {
   return (
@@ -86,7 +87,7 @@ function PriceSection() {
   const { data, isLoading, isError } = useCandles(active.symbol);
 
   const closes = data?.candles.map(c => c.closePrice) ?? [];
-  const series: ChartSeries[] = [{ values: closes, color: '#3182f6', fill: true }];
+  const series: ChartSeries[] = [{ values: closes, color: colors.accent, fill: true }];
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
@@ -160,19 +161,19 @@ function HoldingRow({ item }: { item: HoldingsItem }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f7' },
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 48 },
   h1: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
   h2: { fontSize: 17, fontWeight: '600', marginBottom: 10 },
   gap: { marginTop: 20 },
   section: { marginTop: 24 },
   cardRow: { gap: 10 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#eee' },
+  card: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#eee' },
   cardLabel: { color: '#9ca3af', fontSize: 12 },
   cardValue: { fontSize: 18, fontWeight: '700', marginTop: 4 },
   cardSub: { fontSize: 13, fontWeight: '500', marginTop: 2 },
   chartCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
@@ -182,11 +183,11 @@ const styles = StyleSheet.create({
   },
   chips: { gap: 8, paddingBottom: 10 },
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#eef0f3' },
-  chipActive: { backgroundColor: '#3182f6' },
+  chipActive: { backgroundColor: colors.accent },
   chipText: { fontSize: 13, color: '#4b5563' },
   chipTextActive: { color: '#fff', fontWeight: '600' },
   empty: { color: '#9ca3af', textAlign: 'center', paddingVertical: 32 },
-  list: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#eee' },
+  list: { backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: '#eee' },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
