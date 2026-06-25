@@ -33,6 +33,12 @@ export function RootLayout() {
                 >
                   백테스팅
                 </Link>
+                <Link
+                  to="/simulator"
+                  className="hover:text-gray-900 [&.active]:font-semibold [&.active]:text-gray-900"
+                >
+                  시뮬레이터
+                </Link>
               </nav>
             )}
           </div>
