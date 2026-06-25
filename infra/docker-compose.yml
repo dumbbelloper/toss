@@ -1,0 +1,55 @@
+# 로컬 개발용 인증 인프라: Keycloak(OIDC IdP) + 전용 Postgres.
+#
+# - production 모드(`start`)로 기동 — dev 모드(`start-dev`)가 아님. HTTPS 필수.
+# - realm 구성은 keycloak/import/toss-realm.json 에서 첫 기동 시 자동 임포트(--import-realm).
+# - TLS 는 mkcert 로컬 CA 가 발급한 인증서 사용. 브라우저 신뢰: `mkcert -install`.
+#
+# 기동: docker compose -f infra/docker-compose.yml up -d
+# 콘솔: https://localhost:8443  (admin / admin)
+services:
+  keycloak-db:
+    image: postgres:17.4               # 앱 DB(backend/compose.yaml)와 분리된 Keycloak 전용 DB
+    container_name: toss-keycloak-db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.0   # 2026-01 최신 안정. 재현성 위해 패치까지 고정.
+    container_name: toss-keycloak
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    command: ["start", "--import-realm"]
+    environment:
+      # --- DB ---
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      # --- Hostname & TLS (production 모드는 HTTPS 필수) ---
+      KC_HOSTNAME: https://localhost:8443
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/tls/localhost.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/tls/localhost-key.pem
+      # --- 초기 관리자 (KC26+: BOOTSTRAP_ADMIN_*) ---
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # --- 헬스/메트릭 (관리 포트 9000) ---
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8443:8443"     # HTTPS — 브라우저 front-channel + 백엔드 back-channel
+      - "9000:9000"     # 관리(헬스/메트릭)
+    volumes:
+      - ./keycloak/tls:/opt/keycloak/conf/tls:ro       # mkcert 인증서 (gitignore)
+      - ./keycloak/import:/opt/keycloak/data/import:ro  # realm export (버전관리)
+
+volumes:
+  keycloak-pgdata:

@@ -1,0 +1,30 @@
+# 로컬 개발용 앱 PostgreSQL. `docker compose up -d` 로 직접 기동한다.
+# 접속 정보는 application.yml 에 기본값으로 명시(localhost:5432/toss, toss/toss).
+# (이전엔 spring-boot-docker-compose 가 자동 기동/주입했으나, IDE working-dir 의존성 문제로 제거)
+#
+# 버전은 안정화된 stable 태그로 고정 (재현성). 업그레이드 시 의도적으로만 변경.
+#
+# 프로젝트명을 toss 로 고정한다. compose.yaml 이 backend/ 로 이동하면서 기본 프로젝트명이
+# 디렉터리(backend)로 바뀌면 기존 toss-postgres 컨테이너(project=toss)와 container_name 이
+# 충돌한다. 고정하면 기존 컨테이너·볼륨(toss_toss-pgdata)을 그대로 재사용한다.
+name: toss
+services:
+  postgres:
+    image: postgres:17.4            # PostgreSQL 17.x stable (장기 지원 메이저)
+    container_name: toss-postgres
+    environment:
+      POSTGRES_DB: toss
+      POSTGRES_USER: toss
+      POSTGRES_PASSWORD: toss
+    ports:
+      - "5432:5432"
+    volumes:
+      - toss-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U toss -d toss"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  toss-pgdata:

@@ -1,0 +1,40 @@
+# 테스트 전용 설정 (test classpath 가 우선) — 라이브 API 호출/폴러/알림을 끄고
+# application-local.yml(시크릿·monitor.enabled) 을 로드하지 않아 테스트를 격리한다.
+# 데이터소스는 Testcontainers(@ServiceConnection)가 제공한다.
+spring:
+  application:
+    name: toss-test
+  flyway:
+    enabled: true
+  # 테스트는 Keycloak 없이 컨텍스트만 로드한다. issuer-uri(기동 시 discovery 네트워크 호출)
+  # 대신 정적 더미 엔드포인트를 주입해 오프라인에서도 SecurityFilterChain 이 구성되게 한다.
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: test-client
+            client-secret: test-secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
+            scope: openid, profile, email
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:8443/auth
+            token-uri: http://localhost:8443/token
+            jwk-set-uri: http://localhost:8443/jwks
+            user-info-uri: http://localhost:8443/userinfo
+            user-name-attribute: preferred_username
+      # resource server: issuer-uri(기동 시 discovery) 대신 정적 jwk-set-uri(지연 로딩)로
+      # 오프라인에서도 JwtDecoder 빈이 생성되게 한다.
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8443/jwks
+
+toss:
+  base-url: https://openapi.tossinvest.com
+  monitor:
+    enabled: false
+
+telegram:
+  enabled: false

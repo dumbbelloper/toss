@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: toss-api
+  # 로컬 시크릿(자격증명)은 gitignore 된 application-local.yml 에서 로드. 없으면 무시.
+  config:
+    import: optional:application-local.yml
+  # IO 바운드 폴링 워크로드 → 가상 스레드로 처리 (Java 25 / Boot 4.1)
+  threads:
+    virtual:
+      enabled: true
+  flyway:
+    enabled: true
+  # 데이터소스 출처:
+  #   - 로컬 dev: 아래 기본값(직접 띄운 compose.yaml 의 PostgreSQL, `docker compose up -d`)
+  #   - 테스트: Testcontainers (@ServiceConnection 가 아래 값을 오버라이드)
+  #   - 운영: SPRING_DATASOURCE_URL/USERNAME/PASSWORD 환경변수가 아래 값을 오버라이드
+  datasource:
+    url: jdbc:postgresql://localhost:5432/toss
+    username: toss
+    password: toss
+  # BFF 인증: Keycloak(OIDC) confidential client. 브라우저엔 토큰 미노출(세션 쿠키).
+  #   secret 은 dev 기본값(realm import 와 동일) — 운영은 KEYCLOAK_WEB_BFF_SECRET 환경변수.
+  #   issuer HTTPS 호출엔 dev 트러스트스토어 필요(infra/keycloak/trust-jvm.sh, bootRun 자동 주입).
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: toss-web-bff
+            client-secret: ${KEYCLOAK_WEB_BFF_SECRET:dev-web-bff-secret-change-me}
+            authorization-grant-type: authorization_code
+            scope: openid, profile, email
+            # 콜백을 SPA dev 서버(:5173, Vite proxy)로 받아 브라우저가 :5173 에 머물게 한다.
+            # 운영에선 실제 서비스 origin 으로 교체(WEB_REDIRECT_URI).
+            redirect-uri: ${WEB_REDIRECT_URI:http://localhost:5173/login/oauth2/code/keycloak}
+        provider:
+          keycloak:
+            issuer-uri: https://localhost:8443/realms/toss
+            user-name-attribute: preferred_username
+      # 모바일(React Native)은 Bearer JWT 로 /api/** 를 호출 → resource server 로 검증.
+      resourceserver:
+        jwt:
+          issuer-uri: https://localhost:8443/realms/toss
+
+toss:
+  base-url: https://openapi.tossinvest.com
+  # client-id / client-secret / account-seq 는 application-local.yml 에 설정 (gitignored)
+  digest:
+    enabled: false          # true 시 cron 에 맞춰 텔레그램 시장 요약 발송
+    cron: "0 0 * * * *"     # 매시 정각 KST (Asia/Seoul). 관심종목 전체 + 지수 프록시 + 환율
+
+telegram:
+  enabled: false   # true 로 설정 시 텔레그램 알림 사용. bot-token/chat-id 는 application-local.yml 에.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.toss: DEBUG

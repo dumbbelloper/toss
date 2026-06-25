@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Tailwind 4: CSS-first 설정. 테마 토큰은 @theme 로 확장한다. */
+@theme {
+  --color-toss-blue: #3182f6;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
