@@ -5,6 +5,7 @@
  * Bearer 로 백엔드 /api/me 를 호출한다. 로그인 여부에 따라 사용자 정보 또는 로그인 버튼을 보인다.
  */
 
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   ActivityIndicator,
@@ -18,8 +19,42 @@ import {
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isUnauthorized, useLogin, useLogout, useMe } from './src/auth/auth';
+import { PortfolioScreen } from './src/screens/PortfolioScreen';
 
 const queryClient = new QueryClient();
+
+type Tab = 'home' | 'portfolio';
+
+/** 로그인 시 홈/자산 탭 전환. 미로그인이면 홈(인증 화면)만. */
+function Root() {
+  const me = useMe();
+  const [tab, setTab] = useState<Tab>('home');
+  const loggedIn = !!me.data;
+
+  return (
+    <View style={styles.root}>
+      <View style={styles.screen}>
+        {loggedIn && tab === 'portfolio' ? <PortfolioScreen /> : <AuthScreen />}
+      </View>
+      {loggedIn && <TabBar tab={tab} onChange={setTab} />}
+    </View>
+  );
+}
+
+function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.tabBar, { paddingBottom: insets.bottom + 8 }]}>
+      {(['home', 'portfolio'] as const).map(t => (
+        <Pressable key={t} onPress={() => onChange(t)} style={styles.tab}>
+          <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+            {t === 'home' ? '홈' : '자산'}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 function AuthScreen() {
   const insets = useSafeAreaInsets();
@@ -108,13 +143,25 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <AuthScreen />
+        <Root />
       </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#f5f5f7' },
+  screen: { flex: 1 },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#ddd',
+    paddingTop: 8,
+  },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 6 },
+  tabText: { fontSize: 13, color: '#9ca3af', fontWeight: '500' },
+  tabTextActive: { color: '#3182f6', fontWeight: '700' },
   container: { flex: 1, paddingHorizontal: 24, backgroundColor: '#f5f5f7' },
   title: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
   gap: { marginTop: 20 },
