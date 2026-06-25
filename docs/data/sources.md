@@ -93,7 +93,28 @@ macro_series (
 
 > 백엔드가 이미 **Postgres + Spring Data JDBC** 라 적재 잡(@Scheduled)·어댑터를 그대로 얹으면 됨.
 
-## 5. 미정 (의사결정 대기)
+## 5. 구현 (Phase 1 — 2026-06-25)
 
-- [ ] **데이터 전략**: 프로토타입(무료) 먼저 vs 처음부터 운영 가능 소스. → `docs/adr/` 에 기록 예정.
-- [ ] 1차 대상 유니버스(내 보유 종목만 vs 관심 종목 + 벤치마크 지수).
+**결정 (정확성 우선):**
+- **주 소스 = Yahoo Finance** (chart API). 이유: *배당 재투자 정확 구현*에 필요한 **원시 close +
+  조정 close(분할+배당) + 배당 이벤트**를 한 번에 제공. Stooq 는 조정 방식 모호 → 보조/교체용.
+  (`YahooHistoryProvider`, 교체형 어댑터)
+- **백테스트는 DB(`price_daily`)만 읽는다.** 라이브 호출 X. 데이터는 배치로 적재.
+- 통화 토글(USD ↔ KRW 그 당시 환율)·배당재투자 토글(close ↔ adj_close)을 위해
+  **원시 close + adj_close + `fx_daily`(USDKRW)** 를 함께 보관.
+
+**실제 스키마**: `price_daily(symbol,market,date,open,high,low,close,adj_close,volume,source)`
++ `fx_daily(pair,date,rate,source)` + `symbol_universe`. (마이그레이션 `V2__price_data.sql`)
+
+**적재 코드**: `com.toss.history.*` — `YahooHistoryProvider`(파서) · `PriceDailyDao`(upsert) ·
+`BackfillService` · `HistoryController`(`POST /api/history/backfill`, `GET /api/history/coverage`).
+
+**검증된 커버리지** (초기 유니버스 17 ETF, 상장일~현재):
+SPY 8,407봉(1993~) · QQQ 6,865(1999~) · DIA 7,151(1998~) · VTI 6,292(2001~) · GLD 5,432(2004~) ·
+JEPI 1,530(2020~) 등 — **총 78,199 가격행 + 5,853 환율행**. adj_close 가 과거로 갈수록 close 보다
+낮음(배당 누적) = 총수익 데이터 정상.
+
+## 6. 다음 (Phase 2~3)
+
+- **Phase 2**: 백테스트 엔진을 DB 읽기로 전환(→ 다년 백테스트) + 자정 증분 잡(@Scheduled, Toss/Yahoo) + 갭필.
+- **Phase 3**: UI 토글(배당 재투자 / USD·KRW 환율) web·mobile. 팩터(Ken French)·매크로(FRED) 테이블.
