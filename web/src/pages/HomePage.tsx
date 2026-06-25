@@ -20,7 +20,7 @@ export function HomePage() {
         <button
           type="button"
           onClick={login}
-          className="rounded-lg bg-toss-blue px-5 py-3 font-semibold text-white hover:brightness-95"
+          className="rounded-lg bg-accent px-5 py-3 font-semibold text-white hover:bg-accent-hover"
         >
           Keycloak 으로 로그인
         </button>

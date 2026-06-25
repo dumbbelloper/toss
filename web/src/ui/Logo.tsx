@@ -1,7 +1,7 @@
 // 곳간 로고 마크. 창고 지붕(삼각) + 갈무리되는 자산(상승 막대).
 // mobile/src/ui/Logo.tsx 와 동일한 path 데이터를 공유한다(통일 브랜딩).
 
-export function LogoMark({ size = 24, color = '#3182f6' }: { size?: number; color?: string }) {
+export function LogoMark({ size = 24, color = '#b5703c' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill={color} aria-hidden="true">
       {/* 창고 지붕 */}

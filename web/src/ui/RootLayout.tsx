@@ -8,7 +8,7 @@ export function RootLayout() {
   const logout = useLogout()
 
   return (
-    <div className="min-h-full bg-gray-50 text-gray-900">
+    <div className="min-h-full bg-bg text-ink">
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-5">
