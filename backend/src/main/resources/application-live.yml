@@ -1,0 +1,39 @@
+# =========================================================================
+# 운영(live) 프로파일 — SPRING_PROFILES_ACTIVE=live 로 활성화.
+# 비밀값(client-secret, bot-token 등)은 여기 두지 않고 환경변수(k8s Secret)로 주입한다.
+# 비밀이 아닌 운영 설정(관심종목·주기·cron)만 버전관리한다.
+# =========================================================================
+toss:
+  client-id: ${TOSS_CLIENT_ID}
+  client-secret: ${TOSS_CLIENT_SECRET}
+  account-seq: ${TOSS_ACCOUNT_SEQ:1}
+  monitor:
+    enabled: true
+    poll-interval-ms: 60000
+    symbols:
+      - "0181B0"
+      - "GOOGL"
+      - "DIVO"
+      - "GPIQ"
+      - "GPIX"
+      - "JEPI"
+      - "JEPQ"
+      - "QDVO"
+      - "QLD"
+      - "QQQI"
+      - "SCHD"
+      - "SPYI"
+      - "SSO"
+      - "005930"   # 삼성전자
+      - "000660"   # SK하이닉스
+      - "MU"       # 마이크론 테크놀로지
+      - "SNDK"     # 샌디스크
+      - "SPCX"     # 스페이스X (토스 상장)
+  digest:
+    enabled: true
+    cron: "0 0 * * * *"     # 매시 정각 KST
+
+telegram:
+  enabled: true
+  bot-token: ${TELEGRAM_BOT_TOKEN}
+  chat-id: ${TELEGRAM_CHAT_ID}
