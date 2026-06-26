@@ -6,6 +6,13 @@ spring:
     name: toss-test
   flyway:
     enabled: true
+  # 테스트는 Redis 없이 컨텍스트만 로드 — 세션 외부화를 끄고(servlet 인메모리) Redis 자동설정도 제외.
+  session:
+    store-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
   # 테스트는 Keycloak 없이 컨텍스트만 로드한다. issuer-uri(기동 시 discovery 네트워크 호출)
   # 대신 정적 더미 엔드포인트를 주입해 오프라인에서도 SecurityFilterChain 이 구성되게 한다.
   security:

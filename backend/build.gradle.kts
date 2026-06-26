@@ -28,6 +28,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")        // 웹 BFF: OIDC 로그인 + 세션
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server") // 모바일: Bearer JWT 검증
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")             // 세션 스토어 클라이언트(Lettuce)
+    implementation("org.springframework.session:spring-session-data-redis")               // BFF 세션을 Redis 로 외부화(다중 replica 공유)
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.projectreactor:reactor-core") // SSE 시세 팬아웃용 Sinks/Flux
