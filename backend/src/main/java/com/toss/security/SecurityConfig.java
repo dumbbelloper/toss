@@ -29,6 +29,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.savedrequest.NullRequestCache;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
@@ -120,6 +121,10 @@ public class SecurityConfig {
             .oauth2Login(login -> login
                 .defaultSuccessUrl("/", true)
                 .failureUrl("/?login_error"))
+            // 미인증 요청(예: 부팅 시 /api/me 401)이 "로그인 후 복귀 경로"를 세션에 저장하려고
+            // 세션을 생성하던 부작용을 제거 — 익명 방문자/봇/헬스프로브마다 고아 세션이 쌓이는 걸 막는다.
+            // defaultSuccessUrl(...,true) 로 항상 "/" 로 보내므로 저장된 요청은 어차피 쓰지 않는다.
+            .requestCache(rc -> rc.requestCache(new NullRequestCache()))
             .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrations)))
             // SPA(쿠키 세션) → CSRF 방어 필수. XSRF-TOKEN 쿠키(JS 가독) + BREACH 보호.
             .csrf(csrf -> csrf

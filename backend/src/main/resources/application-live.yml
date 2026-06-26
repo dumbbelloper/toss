@@ -3,6 +3,15 @@
 # 비밀값(client-secret, bot-token 등)은 여기 두지 않고 환경변수(k8s Secret)로 주입한다.
 # 비밀이 아닌 운영 설정(관심종목·주기·cron)만 버전관리한다.
 # =========================================================================
+
+# 운영은 HTTPS(ingress→nginx→backend) 뒤이므로 세션 쿠키에 Secure 를 강제한다
+# (HTTP 로는 전송 안 됨). httpOnly·SameSite=Lax 는 base application.yml 에서 공통 적용.
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true
+
 toss:
   client-id: ${TOSS_CLIENT_ID}
   client-secret: ${TOSS_CLIENT_SECRET}

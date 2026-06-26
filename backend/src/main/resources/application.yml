@@ -1,3 +1,14 @@
+# BFF 세션 쿠키 하드닝. httpOnly(JS 미접근) + SameSite=Lax(CSRF 심층방어 — 로그인 콜백은
+# top-level GET 이라 Lax 통과, cross-site POST 는 차단). Secure 는 dev(http)를 깨므로 운영
+# 프로파일(application-live.yml)에서만 켠다.
+server:
+  servlet:
+    session:
+      timeout: 60m
+      cookie:
+        http-only: true
+        same-site: lax
+
 spring:
   application:
     name: toss-api
