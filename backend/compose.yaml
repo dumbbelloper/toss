@@ -26,5 +26,18 @@ services:
       timeout: 3s
       retries: 5
 
+  # BFF 세션 스토어. 운영은 Sentinel HA(gotgan-gitops apps/redis)지만, 로컬은 standalone 하나로
+  # 충분하다. 버전은 운영과 동일하게 고정(재현성). dev 세션은 휘발이라 볼륨 없이 ephemeral.
+  redis:
+    image: redis:8.2.1
+    container_name: toss-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 volumes:
   toss-pgdata:

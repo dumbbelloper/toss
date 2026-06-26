@@ -29,6 +29,20 @@ spring:
     url: jdbc:postgresql://localhost:5432/toss
     username: toss
     password: toss
+  # BFF 세션 스토어(Redis). 출처:
+  #   - 로컬 dev: 아래 standalone 기본값(compose.yaml 의 redis, `docker compose up -d`)
+  #   - 테스트: 비활성(test/resources/application.yml 가 store-type=none 으로 오버라이드)
+  #   - 운영: application-live.yml 가 Sentinel HA 로 오버라이드(별도 진행)
+  # 세션을 Redis 로 외부화 → 다중 replica 가 세션을 공유(BFF 로그인 핸드셰이크·세션 일관성).
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  session:
+    store-type: redis
+    redis:
+      namespace: "gotgan:session"
+      flush-mode: on-save
   # BFF 인증: Keycloak(OIDC) confidential client. 브라우저엔 토큰 미노출(세션 쿠키).
   #   secret 은 dev 기본값(realm import 와 동일) — 운영은 KEYCLOAK_WEB_BFF_SECRET 환경변수.
   #   issuer HTTPS 호출엔 dev 트러스트스토어 필요(infra/keycloak/trust-jvm.sh, bootRun 자동 주입).
