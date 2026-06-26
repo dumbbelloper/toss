@@ -48,6 +48,10 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @EnableMethodSecurity // @PreAuthorize/@PostAuthorize 활성화 (역할 게이트가 필요할 때 메서드에 직접 적용)
 public class SecurityConfig {
 
+    /** 로그아웃(RP-initiated) 후 복귀 URL. dev=Vite(:5173), 운영=env(WEB_POST_LOGOUT_URI)로 주입. */
+    @org.springframework.beans.factory.annotation.Value("${WEB_POST_LOGOUT_URI:http://localhost:5173/}")
+    private String postLogoutRedirectUri;
+
     /** Bearer 토큰을 가진 요청만 이 체인이 처리한다(@Order(1) 로 우선). */
     @Bean
     @Order(1)
@@ -132,7 +136,7 @@ public class SecurityConfig {
     private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrations) {
         JsonEndSessionLogoutSuccessHandler handler =
                 new JsonEndSessionLogoutSuccessHandler(clientRegistrations);
-        handler.setPostLogoutRedirectUri("http://localhost:5173/");
+        handler.setPostLogoutRedirectUri(postLogoutRedirectUri);
         return handler;
     }
 
