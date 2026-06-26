@@ -115,7 +115,11 @@ public class SecurityConfig {
                 .anyRequest().authenticated())
             // 로그인 성공 후 SPA 루트("/")로 복귀. 콜백이 Vite proxy(:5173)를 거치므로
             // 상대 경로 "/"는 브라우저 기준 :5173/ 로 해석된다.
-            .oauth2Login(login -> login.defaultSuccessUrl("/", true))
+            // 실패 시 Spring 기본값은 "/login?error" 인데 SPA 에 그 라우트가 없어 "Not found" 가
+            // 떴다 — SPA 가 가진 루트("/")로 보내 쿼리(login_error)로 랜딩이 안내 배너를 띄우게 한다.
+            .oauth2Login(login -> login
+                .defaultSuccessUrl("/", true)
+                .failureUrl("/?login_error"))
             .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrations)))
             // SPA(쿠키 세션) → CSRF 방어 필수. XSRF-TOKEN 쿠키(JS 가독) + BREACH 보호.
             .csrf(csrf -> csrf

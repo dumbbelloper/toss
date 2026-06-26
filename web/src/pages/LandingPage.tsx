@@ -1,6 +1,24 @@
 // 미인증 사용자용 랜딩 페이지. 서비스 소개 + 기능 + 차별점 + 로그인 CTA.
+import { useEffect, useState } from 'react'
+
 import { login } from '../lib/auth'
 import { LogoMark } from '../ui/Logo'
+
+/**
+ * 로그인 실패 시 백엔드가 "/?login_error" 로 보낸다(SPA 에 /login 라우트가 없어 "Not found" 가
+ * 뜨던 것을 대체). 배너를 띄운 뒤 URL 에서 플래그를 지워 새로고침 시 잔류하지 않게 한다.
+ */
+function useLoginError(): boolean {
+  const [failed] = useState(() => new URLSearchParams(window.location.search).has('login_error'))
+  useEffect(() => {
+    if (failed) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('login_error')
+      window.history.replaceState({}, '', url.pathname + url.search)
+    }
+  }, [failed])
+  return failed
+}
 
 const FEATURES: { emoji: string; title: string; desc: string }[] = [
   {
@@ -28,8 +46,17 @@ const EDGES: [string, string][] = [
 ]
 
 export function LandingPage() {
+  const loginFailed = useLoginError()
   return (
     <div className="space-y-16 py-4">
+      {loginFailed && (
+        <div
+          role="alert"
+          className="mx-auto max-w-xl rounded-xl border border-loss/30 bg-loss/10 px-5 py-3 text-center text-sm text-loss"
+        >
+          로그인을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.
+        </div>
+      )}
       <section className="flex flex-col items-center text-center">
         <LogoMark size={56} />
         <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-ink">곳간</h1>
