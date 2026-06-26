@@ -12,6 +12,19 @@ server:
       cookie:
         secure: true
 
+# 세션 스토어: 운영은 Redis Sentinel HA(gotgan-gitops apps/redis = master1+replica2 + sentinel3).
+# base application.yml 의 standalone(localhost)을 Sentinel 로 오버라이드한다. store-type/namespace 는
+# base 에서 상속(redis). 접속정보·비밀번호는 k8s Deployment env 로 주입(SPRING_DATASOURCE 와 동일 원칙):
+#   REDIS_SENTINEL_NODES = rfs-gotgan-session.redis.svc.cluster.local:26379
+#   REDIS_PASSWORD       = Secret gotgan-session-redis-auth (requirepass). 센티넬은 무인증.
+spring:
+  data:
+    redis:
+      sentinel:
+        master: ${REDIS_SENTINEL_MASTER:mymaster}
+        nodes: ${REDIS_SENTINEL_NODES}
+      password: ${REDIS_PASSWORD}
+
 toss:
   client-id: ${TOSS_CLIENT_ID}
   client-secret: ${TOSS_CLIENT_SECRET}
